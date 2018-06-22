@@ -14,7 +14,7 @@ namespace Slic3r {
 
 //! macro used to mark string used at localization, 
 //! return same string
-#define L(s) translate(s)
+#define L(s) s//translate(s)
 
 PrintConfigDef::PrintConfigDef()
 {
