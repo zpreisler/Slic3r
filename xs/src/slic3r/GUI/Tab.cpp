@@ -235,30 +235,21 @@ void Tab::OnActivate()
 {
 //#ifdef __WXOSX__	
 	wxWindowUpdateLocker noUpdates(this);
-// 	auto szr = GetSizer();
-// 	szr->SetMinSize(GetSize());
-	auto size = GetSizer()->GetSize();	
-	{
-		//equivalent of Fit()
-		CacheBestSize(size);
-		SetSize(size);
-	}
-//  	this->SetSizerAndFit(szr);
 
-// 	m_btn_panel->Fit();
-// 
-// 	Page* page = nullptr;
-// 	auto selection = m_treectrl->GetItemText(m_treectrl->GetSelection());
-// 	for (auto p : m_pages)
-// 		if (p->title() == selection)
-// 		{
-// 			page = p.get();
-// 			break;
-// 		}
-// 	if (page == nullptr) return;
-// 	page->Fit();
-// 	m_hsizer->Layout();
-// 	Refresh();
+	m_btn_panel->Fit();
+
+	Page* page = nullptr;
+	auto selection = m_treectrl->GetItemText(m_treectrl->GetSelection());
+	for (auto p : m_pages)
+		if (p->title() == selection)
+		{
+			page = p.get();
+			break;
+		}
+	if (page == nullptr) return;
+	page->Fit();
+	m_hsizer->Layout();
+	Refresh();
 //#endif
 }
 
@@ -1216,12 +1207,12 @@ void TabPrint::update()
 	Thaw();
 }
 
-void TabPrint::OnActivate()
-{
-	m_recommended_thin_wall_thickness_description_line->SetText(
-		from_u8(PresetHints::recommended_thin_wall_thickness(*m_preset_bundle)));
-	Tab::OnActivate();
-}
+// void TabPrint::OnActivate()
+// {
+// 	m_recommended_thin_wall_thickness_description_line->SetText(
+// 		from_u8(PresetHints::recommended_thin_wall_thickness(*m_preset_bundle)));
+// 	Tab::OnActivate();
+// }
 
 void TabFilament::build()
 {
