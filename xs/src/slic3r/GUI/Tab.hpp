@@ -308,7 +308,7 @@ public:
 	void		build() override;
 	void		reload_config() override;
 	void		update() override;
-	void		OnActivate() override;
+// 	void		OnActivate() override;
 };
 
 //Slic3r::GUI::Tab::Printer;
