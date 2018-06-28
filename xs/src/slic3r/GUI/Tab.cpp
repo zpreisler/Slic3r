@@ -236,20 +236,22 @@ void Tab::OnActivate()
 //#ifdef __WXOSX__	
 	wxWindowUpdateLocker noUpdates(this);
 
-	m_btn_panel->Fit();
+	FitInside();
 
-	Page* page = nullptr;
-	auto selection = m_treectrl->GetItemText(m_treectrl->GetSelection());
-	for (auto p : m_pages)
-		if (p->title() == selection)
-		{
-			page = p.get();
-			break;
-		}
-	if (page == nullptr) return;
-	page->Fit();
-	m_hsizer->Layout();
-	Refresh();
+// 	m_btn_panel->Fit();
+// 
+// 	Page* page = nullptr;
+// 	auto selection = m_treectrl->GetItemText(m_treectrl->GetSelection());
+// 	for (auto p : m_pages)
+// 		if (p->title() == selection)
+// 		{
+// 			page = p.get();
+// 			break;
+// 		}
+// 	if (page == nullptr) return;
+// 	page->Fit();
+// 	m_hsizer->Layout();
+// 	Refresh();
 //#endif
 }
 
