@@ -233,11 +233,17 @@ PageShp Tab::add_options_page(const wxString& title, const std::string& icon, bo
 
 void Tab::OnActivate()
 {
-#ifdef __WXOSX__	
+//#ifdef __WXOSX__	
 	wxWindowUpdateLocker noUpdates(this);
-	auto szr = GetSizer();
-	szr->SetMinSize(szr->GetSize());
- 	this->SetSizerAndFit(szr);
+// 	auto szr = GetSizer();
+// 	szr->SetMinSize(GetSize());
+	auto size = GetSizer()->GetSize();	
+	{
+		//equivalent of Fit()
+		CacheBestSize(size);
+		SetSize(size);
+	}
+//  	this->SetSizerAndFit(szr);
 
 // 	m_btn_panel->Fit();
 // 
@@ -253,7 +259,7 @@ void Tab::OnActivate()
 // 	page->Fit();
 // 	m_hsizer->Layout();
 // 	Refresh();
-#endif
+//#endif
 }
 
 void Tab::update_labels_colour()
