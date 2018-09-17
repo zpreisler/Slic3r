@@ -4,6 +4,7 @@
 #include <future>
 
 #include <slic3r/GUI/GUI.hpp>
+#include <slic3r/GUI/ProgressStatusBar.hpp>
 
 #include <wx/app.h>
 #include <wx/filedlg.h>
@@ -27,7 +28,7 @@ bool AppControllerBoilerplate::supports_asynch() const
 
 void AppControllerBoilerplate::process_events()
 {
-    wxSafeYield();
+    wxYieldIfNeeded();
 }
 
 AppControllerBoilerplate::PathList
@@ -125,7 +126,9 @@ class GuiProgressIndicator:
     void _state( unsigned st) {
         if(!gauge_.IsShown()) gauge_.ShowModal();
         Base::state(st);
-        gauge_.Update(static_cast<int>(st), message_);
+        if(!gauge_.Update(static_cast<int>(st), message_)) {
+            cancel();
+        }
     }
 
 public:
@@ -139,7 +142,8 @@ public:
     inline GuiProgressIndicator(int range, const wxString& title,
                                 const wxString& firstmsg) :
         gauge_(title, firstmsg, range, wxTheApp->GetTopWindow(),
-               wxPD_APP_MODAL | wxPD_AUTO_HIDE),
+               wxPD_APP_MODAL | wxPD_AUTO_HIDE | wxPD_CAN_ABORT),
+
         message_(firstmsg),
         range_(range), title_(title)
     {
@@ -207,31 +211,21 @@ AppControllerBoilerplate::create_progress_indicator(
 
 namespace {
 
-// A wrapper progress indicator class around the statusbar created in perl.
 class Wrapper: public ProgressIndicator, public wxEvtHandler {
-    wxGauge *gauge_;
-    wxStatusBar *stbar_;
+    ProgressStatusBar *sbar_;
     using Base = ProgressIndicator;
     wxString message_;
     AppControllerBoilerplate& ctl_;
 
     void showProgress(bool show = true) {
-        gauge_->Show(show);
+        sbar_->show_progress(show);
     }
 
     void _state(unsigned st) {
         if( st <= ProgressIndicator::max() ) {
             Base::state(st);
-
-            if(!gauge_->IsShown()) showProgress(true);
-
-            stbar_->SetStatusText(message_);
-            if(static_cast<long>(st) == gauge_->GetRange()) {
-                gauge_->SetValue(0);
-                showProgress(false);
-            } else {
-                gauge_->SetValue(static_cast<int>(st));
-            }
+            sbar_->set_status_text(message_);
+            sbar_->set_progress(st);
         }
     }
 
@@ -244,12 +238,12 @@ class Wrapper: public ProgressIndicator, public wxEvtHandler {
 
 public:
 
-    inline Wrapper(wxGauge *gauge, wxStatusBar *stbar,
+    inline Wrapper(ProgressStatusBar *sbar,
                    AppControllerBoilerplate& ctl):
-        gauge_(gauge), stbar_(stbar), ctl_(ctl)
+        sbar_(sbar), ctl_(ctl)
     {
-        Base::max(static_cast<float>(gauge->GetRange()));
-        Base::states(static_cast<unsigned>(gauge->GetRange()));
+        Base::max(static_cast<float>(sbar_->get_range()));
+        Base::states(static_cast<unsigned>(sbar_->get_range()));
 
         Bind(PROGRESS_STATUS_UPDATE_EVENT,
              &Wrapper::_state,
@@ -262,7 +256,7 @@ public:
 
     virtual void max(float val) override {
         if(val > 1.0) {
-            gauge_->SetRange(static_cast<int>(val));
+            sbar_->set_range(static_cast<int>(val));
             ProgressIndicator::max(val);
         }
     }
@@ -290,18 +284,19 @@ public:
 
     virtual void title(const std::string & /*title*/) override {}
 
+    virtual void on_cancel(CancelFn fn) override {
+        sbar_->set_cancel_callback(fn);
+        Base::on_cancel(fn);
+    }
+
 };
 }
 
-void AppController::set_global_progress_indicator(
-        unsigned gid,
-        unsigned sid)
+void AppController::set_global_progress_indicator(ProgressStatusBar *prsb)
 {
-    wxGauge* gauge = dynamic_cast<wxGauge*>(wxWindow::FindWindowById(gid));
-    wxStatusBar* sb = dynamic_cast<wxStatusBar*>(wxWindow::FindWindowById(sid));
-
-    if(gauge && sb) {
-        global_progressind_ = std::make_shared<Wrapper>(gauge, sb, *this);
+    if(prsb) {
+        global_progress_indicator(std::make_shared<Wrapper>(prsb, *this));
     }
 }
+
 }

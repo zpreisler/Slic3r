@@ -182,7 +182,6 @@ public:
         return PrintController::Ptr( new PrintController(print) );
     }
 
-    //FIXME Vojtech: Merging error
     void slice() {}
     void slice_to_png() {}
 
@@ -195,6 +194,7 @@ public:
 class AppController: public AppControllerBoilerplate {
     Model *model_ = nullptr;
     PrintController::Ptr printctl;
+    std::atomic<bool> arranging_;
 public:
 
     /**
@@ -237,8 +237,7 @@ public:
      * @param gauge_id The ID of the gague widget of the status bar.
      * @param statusbar_id The ID of the status bar.
      */
-    void set_global_progress_indicator(unsigned gauge_id,
-                                          unsigned statusbar_id);
+    void set_global_progress_indicator(ProgressStatusBar *prs);
 
     void arrange_model();
 };

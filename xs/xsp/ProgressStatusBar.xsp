@@ -3,6 +3,7 @@
 %{
 #include <xsinit.h>
 #include "slic3r/GUI/ProgressStatusBar.hpp"
+#include "slic3r/GUI/GUI.hpp"
 %}
 
 %name{Slic3r::GUI::ProgressStatusBar} class ProgressStatusBar {
@@ -37,7 +38,7 @@
         %code%{ THIS->embed(); %};
 
     void SetStatusText(std::string txt)
-        %code%{ THIS->set_status_text(txt); %};
+        %code%{ THIS->set_status_text(_(txt)); %};
 
     void ShowCancelButton()
         %code%{ THIS->show_cancel_button(); %};

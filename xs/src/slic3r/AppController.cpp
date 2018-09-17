@@ -96,75 +96,77 @@ const PrintConfig &PrintController::config() const
 
 void AppController::arrange_model()
 {
-    auto ftr = std::async(
-               supports_asynch()? std::launch::async : std::launch::deferred,
-               [this]()
-    {
-        using Coord = libnest2d::TCoord<libnest2d::PointImpl>;
+    using Coord = libnest2d::TCoord<libnest2d::PointImpl>;
 
-        unsigned count = 0;
-        for(auto obj : model_->objects) count += obj->instances.size();
+    if(arranging_.load()) return;
 
-        auto pind = global_progress_indicator();
+    // to prevent UI reentrancies
+    arranging_.store(true);
 
-        float pmax = 1.0;
+    unsigned count = 0;
+    for(auto obj : model_->objects) count += obj->instances.size();
 
-        if(pind) {
-            pmax = pind->max();
+    auto pind = global_progress_indicator();
 
-            // Set the range of the progress to the object count
-            pind->max(count);
+    float pmax = 1.0;
 
-        }
+    if(pind) {
+        pmax = pind->max();
 
-        auto dist = print_ctl()->config().min_object_distance();
+        // Set the range of the progress to the object count
+        pind->max(count);
 
-        // Create the arranger config
-        auto min_obj_distance = static_cast<Coord>(dist/SCALING_FACTOR);
-
-        auto& bedpoints = print_ctl()->config().bed_shape.values;
-        Polyline bed; bed.points.reserve(bedpoints.size());
-        for(auto& v : bedpoints)
-            bed.append(Point::new_scale(v(0), v(1)));
-
-        if(pind) pind->update(0, L("Arranging objects..."));
-
-        try {
-            arr::BedShapeHint hint;
-            // TODO: from Sasha from GUI
-            hint.type = arr::BedShapeType::WHO_KNOWS;
-
-//FIXME merge error
-/*
-            arr::arrange(*model_,
-                         min_obj_distance,
-                         bed,
-                         hint,
-                         false, // create many piles not just one pile
-                         [pind, count](unsigned rem) {
-                if(pind)
-                    pind->update(count - rem, L("Arranging objects..."));
-            });
-*/
-        } catch(std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            report_issue(IssueType::ERR,
-                         L("Could not arrange model objects! "
-                         "Some geometries may be invalid."),
-                         L("Exception occurred"));
-        }
-
-        // Restore previous max value
-        if(pind) {
-            pind->max(pmax);
-            pind->update(0, L("Arranging done."));
-        }
-    });
-
-    while( ftr.wait_for(std::chrono::milliseconds(10))
-           != std::future_status::ready) {
-        process_events();
+        pind->on_cancel([this](){
+            arranging_.store(false);
+        });
     }
+
+    auto dist = print_ctl()->config().min_object_distance();
+
+    // Create the arranger config
+    auto min_obj_distance = static_cast<Coord>(dist/SCALING_FACTOR);
+
+    auto& bedpoints = print_ctl()->config().bed_shape.values;
+    Polyline bed; bed.points.reserve(bedpoints.size());
+    for(auto& v : bedpoints)
+        bed.append(Point::new_scale(v(0), v(1)));
+
+    if(pind) pind->update(0, L("Arranging objects..."));
+
+    try {
+        arr::BedShapeHint hint;
+        // TODO: from Sasha from GUI
+        hint.type = arr::BedShapeType::WHO_KNOWS;
+
+        arr::arrange(*model_,
+                      min_obj_distance,
+                      bed,
+                      hint,
+                      false, // create many piles not just one pile
+                      [this, pind, count](unsigned rem) {
+            if(pind)
+                pind->update(count - rem, L("Arranging objects..."));
+
+            process_events();
+        }, [this] () { return !arranging_.load(); });
+    } catch(std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        report_issue(IssueType::ERR,
+                        L("Could not arrange model objects! "
+                        "Some geometries may be invalid."),
+                        L("Exception occurred"));
+    }
+
+    // Restore previous max value
+    if(pind) {
+        pind->max(pmax);
+        pind->update(0, arranging_.load() ? L("Arranging done.") :
+                                            L("Arranging canceled."));
+
+        pind->on_cancel(/*remove cancel function*/);
+    }
+
+    arranging_.store(false);
 }
 
 }
