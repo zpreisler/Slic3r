@@ -81,6 +81,8 @@ inline t_file_wild_card& get_file_wild_card() {
 	return FILE_WILDCARDS;
 }
 
+wxString get_model_wildcard();
+
 struct PresetTab {
     std::string       name;
     Tab*              panel;
@@ -157,6 +159,7 @@ extern void open_preferences_dialog(int event_preferences);
 // Create a new preset tab (print, filament and printer),
 void create_preset_tabs(bool no_controller, int event_value_change, int event_presets_changed);
 TabIface* get_preset_tab_iface(char *name);
+Tab* get_preset_tab(const char *name);
 
 // add it at the end of the tab panel.
 void add_created_tab(Tab* panel, int event_value_change, int event_presets_changed);

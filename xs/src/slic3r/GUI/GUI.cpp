@@ -71,6 +71,16 @@ namespace Slic3r { namespace GUI {
 IOPMAssertionID assertionID;
 #endif
 
+wxString get_model_wildcard()
+{
+    t_file_wild_card vec_FILE_WILDCARDS = get_file_wild_card();
+    std::vector<std::string> file_types = { "known", "stl", "obj", "amf", "3mf", "prusa" };
+    wxString MODEL_WILDCARD;
+    for (auto file_type : file_types)
+        MODEL_WILDCARD += vec_FILE_WILDCARDS.at(file_type) + "|";
+    return MODEL_WILDCARD;
+}
+
 void disable_screensaver()
 {
     #if __APPLE__
@@ -523,16 +533,10 @@ void add_menus(wxMenuBar *menu, int event_preferences_changed, int event_languag
 }
 
 void open_model(wxWindow *parent, wxArrayString& input_files){
-	t_file_wild_card vec_FILE_WILDCARDS = get_file_wild_card();
-	std::vector<std::string> file_types = { "known", "stl", "obj", "amf", "3mf", "prusa" };
-	wxString MODEL_WILDCARD;
-	for (auto file_type : file_types)
-		MODEL_WILDCARD += vec_FILE_WILDCARDS.at(file_type) + "|";
-
 	auto dlg_title = _(L("Choose one or more files (STL/OBJ/AMF/3MF/PRUSA):"));
 	auto dialog = new wxFileDialog(parent /*? parent : GetTopWindow(g_wxMainFrame)*/, dlg_title, 
 		g_AppConfig->get_last_dir(), "",
-		MODEL_WILDCARD, wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
+		get_model_wildcard(), wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
 	if (dialog->ShowModal() != wxID_OK) {
 		dialog->Destroy();
 		return ;
@@ -645,6 +649,22 @@ TabIface* get_preset_tab_iface(char *name)
 		}
 	}
 	return new TabIface(nullptr);
+}
+
+Tab* get_preset_tab(char *name)
+{
+    Tab* tab = get_tab(name);
+    if (tab) return tab;
+
+    for (size_t i = 0; i < g_wxTabPanel->GetPageCount(); ++i) {
+        tab = dynamic_cast<Tab*>(g_wxTabPanel->GetPage(i));
+        if (!tab)
+            continue;
+        if (tab->name() == name) {
+            return tab;
+        }
+    }
+    return nullptr;
 }
 
 // opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)

@@ -1226,7 +1226,7 @@ void load_part(	ModelObject* model_object,
 			for (auto volume : object->volumes) {
 				auto new_volume = model_object->add_volume(*volume);
 				new_volume->modifier = is_modifier;
-				boost::filesystem::path(input_file).filename().string();
+				//boost::filesystem::path(input_file).filename().string();
 				new_volume->name = boost::filesystem::path(input_file).filename().string();
 
 				part_names.Add(new_volume->name);
