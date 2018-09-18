@@ -224,6 +224,8 @@ add_library(libslic3r_gui STATIC
     ${LIBDIR}/slic3r/GUI/GUI_ObjectParts.hpp
     ${LIBDIR}/slic3r/GUI/LambdaObjectDialog.cpp
     ${LIBDIR}/slic3r/GUI/LambdaObjectDialog.hpp
+    ${LIBDIR}/slic3r/GUI/MainFrame.cpp
+    ${LIBDIR}/slic3r/GUI/MainFrame.hpp
     ${LIBDIR}/slic3r/GUI/Tab.cpp
     ${LIBDIR}/slic3r/GUI/Tab.hpp
     ${LIBDIR}/slic3r/GUI/TabIface.cpp

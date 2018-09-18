@@ -137,6 +137,7 @@ void PreferencesDialog::accept()
 		wxCommandEvent event(m_event_preferences);
 		get_app()->ProcessEvent(event);
 	}
+//     wxTheApp->update_ui_from_settings(); //! #ys_FIXME
 }
 
 } // GUI

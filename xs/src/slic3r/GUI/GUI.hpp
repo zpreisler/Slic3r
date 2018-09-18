@@ -7,10 +7,10 @@
 #include "../../libslic3r/Utils.hpp"
 #include "GUI_ObjectParts.hpp"
 
+#include <wx/app.h>
 #include <wx/intl.h>
 #include <wx/string.h>
 
-class wxApp;
 class wxWindow;
 class wxFrame;
 class wxMenuBar;
@@ -26,6 +26,7 @@ class wxButton;
 class wxFileDialog;
 class wxStaticBitmap;
 class wxFont;
+class wxMenuItem;
 
 namespace Slic3r { 
 
@@ -63,6 +64,7 @@ namespace GUI {
 
 class Tab;
 class ConfigOptionsGroup;
+class MainFrame;
 // Map from an file_type name to full file wildcard name.
 typedef std::map<std::string, std::string> t_file_wild_card;
 inline t_file_wild_card& get_file_wild_card() {
@@ -169,9 +171,10 @@ void change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt
 // Update UI / Tabs to reflect changes in the currently loaded presets
 void load_current_presets();
 
-void show_error(wxWindow* parent, const wxString& message);
+void show_error(wxWindow* parent, const wxString& message=wxEmptyString);
 void show_error_id(int id, const std::string& message);   // For Perl
-void show_info(wxWindow* parent, const wxString& message, const wxString& title);
+void show_info(wxWindow* parent, const wxString& message, const wxString& title=wxEmptyString);
+void fatal_error(wxWindow* parent);
 void warning_catcher(wxWindow* parent, const wxString& message);
 
 // load language saved at application config 
@@ -235,6 +238,54 @@ void enable_action_buttons(bool enable);
 extern void about();
 // Ask the destop to open the datadir using the default file explorer.
 extern void desktop_open_datadir_folder();
+
+
+// -------------------------------------------------------------------
+// GUI
+// -------------------------------------------------------------------
+class GUI : public wxApp
+{
+    // Datadir provided on the command line.
+    std::string datadir = "";
+    // If set, the "Controller" tab for the control of the printer over serial line and the serial port settings are hidden.
+    bool no_plater = true;
+    std::vector< std::function<void()> >    m_cb; // #ys_FIXME
+
+    int VERSION_ONLINE_EVENT = wxNewEventType();
+    bool        app_conf_exists = false;
+public:
+    virtual bool    OnInit() override;
+    void            recreate_GUI();
+    void            system_info();
+    static bool     catch_error(std::function<void()> cb,
+//                                 wxMessageDialog* message_dialog,
+                                const std::string& err);
+//     void            notify(/*message*/);
+    void            update_ui_from_settings();
+//     wxArrayString   open_model(wxWindow* window);
+    void            CallAfter(std::function<void()> cb);
+    wxMenuItem*     append_menu_item(wxMenu* menu,
+                                    int id,
+                                    const wxString& string,
+                                    const wxString& description,
+                                    const std::string& icon,
+                                    std::function<void(wxCommandEvent& event)> cb,
+                                    int kind = 0);
+    wxMenuItem*     append_submenu(wxMenu* menu,
+                                    wxMenu* sub_menu,
+                                    int id,
+                                    const wxString& string,
+                                    const wxString& description,
+                                    const std::string& icon);
+    void            save_window_pos(wxFrame* window, const std::string& name);
+    void            restore_window_pos(wxFrame* window, const std::string& name);
+
+    AppConfig*      app_config = nullptr;
+    PresetBundle*   preset_bundle = nullptr;
+    PresetUpdater*  preset_updater = nullptr;
+    MainFrame*      mainframe = nullptr;
+};
+DECLARE_APP(GUI)
 
 } // namespace GUI
 } // namespace Slic3r

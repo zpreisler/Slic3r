@@ -211,7 +211,9 @@ void PresetUpdater::priv::sync_version() const
 			BOOST_LOG_TRIVIAL(info) << boost::format("Got Slic3rPE online version: `%1%`. Sending to GUI thread...") % body;
 			wxCommandEvent* evt = new wxCommandEvent(version_online_event);
 			evt->SetString(body);
-			GUI::get_app()->QueueEvent(evt);
+            GUI::get_app()->QueueEvent(evt);
+//         wxTheApp->app_config->set("version_online", body); //! #ys_FIXME
+//         wxTheApp->app_config->save();
 		})
 		.perform_sync();
 }

@@ -22,15 +22,12 @@
 namespace Slic3r {
 namespace GUI
 {
-MainFrame::MainFrame(bool    no_plater,
-                        bool    loaded,
-                        int     lang_ch_event,
-                        int     preferences_event) :
+MainFrame::MainFrame(const bool no_plater, const bool loaded) :
 wxFrame(nullptr, wxID_ANY, "FORK_NAME-VERSION", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE),
         m_no_plater(no_plater),
-        m_loaded(loaded),
-        m_lang_ch_event(lang_ch_event),
-        m_preferences_event(preferences_event)
+        m_loaded(loaded)//,
+//         m_lang_ch_event(lang_ch_event),
+//         m_preferences_event(preferences_event)
 {
 //         my($class, %params) = @_;
     Slic3r::GUI::set_main_frame(this);

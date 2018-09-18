@@ -60,7 +60,6 @@ class MainFrame : public wxFrame
     int         m_lang_ch_event;
     int         m_preferences_event;
 
-    wxPanel*    m_plater = nullptr;
     wxString    m_qs_last_input_file = wxEmptyString;
     wxString    m_qs_last_output_file = wxEmptyString;
     wxString    m_last_config = wxEmptyString;
@@ -87,10 +86,7 @@ class MainFrame : public wxFrame
     std::string     get_dir_name(const wxString full_name) const ;
 public:
     MainFrame() {}
-    MainFrame(  bool    no_plater,
-                bool    loaded,
-                int     lang_ch_event,
-                int     preferences_event);
+    MainFrame(const bool no_plater, const bool loaded);
     ~MainFrame() {}
 
 
@@ -118,8 +114,8 @@ public:
     void        select_view(const std::string& direction);
 
 
+    wxPanel*            m_plater = nullptr;
     wxNotebook*         m_tabpanel = nullptr;
-
     wxProgressDialog*   m_progress_dialog = nullptr;
 };
 
