@@ -75,7 +75,7 @@ class MainFrame : public wxFrame
                                  int id,
                                  const wxString& string,
                                  const wxString& description,
-                                 std::function<void(wxMenuEvent& event)> cb,
+                                 std::function<void(wxCommandEvent& event)> cb,
                                  const std::string& icon = "");
 
     wxMenuItem* m_menu_item_reslice_now = nullptr;
