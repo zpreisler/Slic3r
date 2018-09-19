@@ -1059,7 +1059,7 @@ void Print::_make_wipe_tower()
     if (! this->has_wipe_tower())
         return;
 
-    m_wipe_tower_depth = 0.f;
+    m_wipe_tower_dimensions = Vec3f::Zero();
 
     // Get wiping matrix to get number of extruders and convert vector<double> to vector<float>:
     std::vector<float> wiping_matrix(cast<float>(this->config.wiping_volumes_matrix.values));
@@ -1181,7 +1181,7 @@ void Print::_make_wipe_tower()
     // Generate the wipe tower layers.
     m_wipe_tower_tool_changes.reserve(m_tool_ordering.layer_tools().size());
     wipe_tower.generate(m_wipe_tower_tool_changes);
-    m_wipe_tower_depth = wipe_tower.get_depth();
+    m_wipe_tower_dimensions = wipe_tower.get_dimensions();
 
     // Unload the current filament over the purge tower.
     coordf_t layer_height = this->objects.front()->config.layer_height.value;

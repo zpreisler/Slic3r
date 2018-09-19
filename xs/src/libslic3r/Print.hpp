@@ -287,7 +287,7 @@ public:
     
     void add_model_object(ModelObject* model_object, int idx = -1);
     bool apply_config(DynamicPrintConfig config);
-    float get_wipe_tower_depth() const { return m_wipe_tower_depth; }
+    Vec3f get_wipe_tower_dimensions() const { return m_wipe_tower_dimensions; }
     bool has_infinite_skirt() const;
     bool has_skirt() const;
     // Returns an empty string if valid, otherwise returns an error message.
@@ -346,7 +346,7 @@ private:
     PrintRegionConfig _region_config_from_model_volume(const ModelVolume &volume);
 
     // Depth of the wipe tower to pass to GLCanvas3D for exact bounding box:
-    float m_wipe_tower_depth = 0.f;
+    Vec3f m_wipe_tower_dimensions = Vec3f::Zero();
 
     // Has the calculation been canceled?
     tbb::atomic<bool>   m_canceled;

@@ -7,6 +7,7 @@
 #include <utility>
 #include <algorithm>
 
+#include "../Point.hpp"
 #include "WipeTower.hpp"
 
 
@@ -106,7 +107,7 @@ public:
 	// Iterates through prepared m_plan, generates ToolChangeResults and appends them to "result"
 	void generate(std::vector<std::vector<WipeTower::ToolChangeResult>> &result);
 
-    float get_depth() const { return m_wipe_tower_depth; }
+    Vec3f get_dimensions() const { return Vec3f(m_wipe_tower_width, m_wipe_tower_depth, m_plan.back().z); }
 
 
 
