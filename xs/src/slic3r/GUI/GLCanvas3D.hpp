@@ -304,9 +304,15 @@ class GLCanvas3D
             Vec3d start_position_3D;
             Vec3d volume_center_offset;
 
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
             bool move_with_shift;
             int move_volume_idx;
             int gizmo_volume_idx;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
         public:
             Drag();
@@ -360,8 +366,17 @@ class GLCanvas3D
         bool is_enabled() const;
         void set_enabled(bool enable);
 
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+        void update_hover_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos, bool wipe_tower);
+        void update_on_off_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos, bool wipe_tower);
+#else
+//##############################################################################################################################################
         void update_hover_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos);
         void update_on_off_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos);
+//##############################################################################################################################################
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
         void reset_all_states();
 
         void set_hover_id(int id);
@@ -381,8 +396,16 @@ class GLCanvas3D
         void start_dragging(const BoundingBoxf3& box);
         void stop_dragging();
 
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+        Vec3d get_displacement() const;
+#else
+//##############################################################################################################################################
         Vec3d get_position() const;
         void set_position(const Vec3d& position);
+//##############################################################################################################################################
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
         Vec3d get_scale() const;
@@ -457,6 +480,46 @@ class GLCanvas3D
         void render(const GLCanvas3D& canvas) const;
     };
 
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    class Selection
+    {
+    public:
+        typedef std::vector<GLVolume*> VolumesList;
+        typedef std::vector<Vec3d> Cache;
+
+    private:
+        VolumesList m_volumes;
+        Cache m_positions_cache;
+
+    public:
+        void add(GLVolume* volume, bool as_single_selection = true);
+        void remove(GLVolume* volume);
+        void clear();
+
+        void update_positions_cache();
+
+        void set_rotation(const Vec3d& rotation);
+        void set_scaling_factor(const Vec3d& scale);
+
+        void translate(const Vec3d& displacement);
+
+        unsigned int count() const { return (unsigned int)m_volumes.size(); }
+        bool is_empty() const { return m_volumes.empty(); }
+        bool is_single() const { return m_volumes.size() == 1; }
+        bool contains_wipe_tower() const;
+
+        const VolumesList& get_volumes() const { return m_volumes; }
+        GLVolume* get_first_volume() { return is_empty() ? nullptr : m_volumes[0]; }
+
+        int get_first_modelobject_id() const;
+        int get_first_modelvolume_id() const;
+
+        BoundingBoxf3 bounding_box() const;
+    };
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
+
     wxGLCanvas* m_canvas;
     wxGLContext* m_context;
     LegendTexture m_legend_texture;
@@ -473,6 +536,11 @@ class GLCanvas3D
     mutable GLToolbar m_toolbar;
 
     mutable GLVolumeCollection m_volumes;
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    Selection m_selection;
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     DynamicPrintConfig* m_config;
     Print* m_print;
     Model* m_model;
@@ -487,18 +555,41 @@ class GLCanvas3D
     bool m_warning_texture_enabled;
     bool m_legend_texture_enabled;
     bool m_picking_enabled;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     bool m_moving_enabled;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     bool m_shader_enabled;
     bool m_dynamic_background_enabled;
     bool m_multisample_allowed;
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    bool m_regenerate_volumes;
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     std::string m_color_by;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     std::string m_select_by;
     std::string m_drag_by;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     bool m_reload_delayed;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     std::vector<std::vector<int>> m_objects_volumes_idxs;
     std::vector<int> m_objects_selections;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     GCodePreviewVolumeIndex m_gcode_preview_volume_index;
 
@@ -539,7 +630,13 @@ class GLCanvas3D
     PerlCallback m_action_cut_callback;
     PerlCallback m_action_settings_callback;
     PerlCallback m_action_layersediting_callback;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     PerlCallback m_action_selectbyparts_callback;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
 public:
     GLCanvas3D(wxGLCanvas* canvas);
@@ -582,8 +679,17 @@ public:
     void set_select_by(const std::string& value);
     void set_drag_by(const std::string& value);
 
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    std::string get_select_by() const;
+    std::string get_drag_by() const;
+#else
+//##############################################################################################################################################
     const std::string& get_select_by() const;
     const std::string& get_drag_by() const;
+//##############################################################################################################################################
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     float get_camera_zoom() const;
 
@@ -671,7 +777,13 @@ public:
     void register_action_cut_callback(void* callback);
     void register_action_settings_callback(void* callback);
     void register_action_layersediting_callback(void* callback);
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_action_selectbyparts_callback(void* callback);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     void bind_event_handlers();
     void unbind_event_handlers();
@@ -701,7 +813,13 @@ private:
     void _resize(unsigned int w, unsigned int h);
 
     BoundingBoxf3 _max_bounding_box() const;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     BoundingBoxf3 _selected_volumes_bounding_box() const;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     void _zoom_to_bounding_box(const BoundingBoxf3& bbox);
     float _get_zoom_to_bounding_box_factor(const BoundingBoxf3& bbox) const;
@@ -742,8 +860,14 @@ private:
     void _start_timer();
     void _stop_timer();
 
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     int _get_first_selected_object_id() const;
     int _get_first_selected_volume_id(int object_id) const;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     // Create 3D thick extrusion lines for a skirt and brim.
     // Adds a new Slic3r::GUI::3DScene::Volume to volumes.

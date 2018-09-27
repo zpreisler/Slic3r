@@ -314,35 +314,37 @@ sub new {
         $self->on_layer_editing_toggled($state);
     };
 
-    my $on_action_selectbyparts = sub {
-        my $curr = Slic3r::GUI::_3DScene::get_select_by($self->{canvas3D});
-        if ($curr eq 'volume') {
-            Slic3r::GUI::_3DScene::set_select_by($self->{canvas3D}, 'object');
-            my $selections = $self->collect_selections;
-            Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);        
-        }
-        elsif ($curr eq 'object') {
-            Slic3r::GUI::_3DScene::set_select_by($self->{canvas3D}, 'volume');
-            my $selections = [];
-            Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-            Slic3r::GUI::_3DScene::deselect_volumes($self->{canvas3D});
-            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);      
-
-            my ($obj_idx, $object) = $self->selected_object;
-            if (defined $obj_idx) {            
-                my $vol_idx = Slic3r::GUI::_3DScene::get_first_volume_id($self->{canvas3D}, $obj_idx);                 
-                #Slic3r::GUI::_3DScene::select_volume($self->{canvas3D}, $vol_idx) if ($vol_idx != -1);
-                my $inst_cnt = $self->{model}->objects->[$obj_idx]->instances_count;
-                for (0..$inst_cnt-1){
-                    Slic3r::GUI::_3DScene::select_volume($self->{canvas3D}, $_ + $vol_idx) if ($vol_idx != -1);
-                }
-
-                my $volume_idx = Slic3r::GUI::_3DScene::get_in_object_volume_id($self->{canvas3D}, $vol_idx);
-                Slic3r::GUI::select_current_volume($obj_idx, $volume_idx) if ($volume_idx != -1);
-            }
-        }
-    };
+#=================================================================================================================================================    
+#    my $on_action_selectbyparts = sub {
+#        my $curr = Slic3r::GUI::_3DScene::get_select_by($self->{canvas3D});
+#        if ($curr eq 'volume') {
+#            Slic3r::GUI::_3DScene::set_select_by($self->{canvas3D}, 'object');
+#            my $selections = $self->collect_selections;
+#            Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
+#            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);        
+#        }
+#        elsif ($curr eq 'object') {
+#            Slic3r::GUI::_3DScene::set_select_by($self->{canvas3D}, 'volume');
+#            my $selections = [];
+#            Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
+#            Slic3r::GUI::_3DScene::deselect_volumes($self->{canvas3D});
+#            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);      
+#
+#            my ($obj_idx, $object) = $self->selected_object;
+#            if (defined $obj_idx) {            
+#                my $vol_idx = Slic3r::GUI::_3DScene::get_first_volume_id($self->{canvas3D}, $obj_idx);                 
+#                #Slic3r::GUI::_3DScene::select_volume($self->{canvas3D}, $vol_idx) if ($vol_idx != -1);
+#                my $inst_cnt = $self->{model}->objects->[$obj_idx]->instances_count;
+#                for (0..$inst_cnt-1){
+#                    Slic3r::GUI::_3DScene::select_volume($self->{canvas3D}, $_ + $vol_idx) if ($vol_idx != -1);
+#                }
+#
+#                my $volume_idx = Slic3r::GUI::_3DScene::get_in_object_volume_id($self->{canvas3D}, $vol_idx);
+#                Slic3r::GUI::select_current_volume($obj_idx, $volume_idx) if ($volume_idx != -1);
+#            }
+#        }
+#    };
+#=================================================================================================================================================    
         
     # Initialize 3D plater
     if ($Slic3r::GUI::have_OpenGL) {
@@ -378,7 +380,9 @@ sub new {
         Slic3r::GUI::_3DScene::register_action_cut_callback($self->{canvas3D}, $on_action_cut);
         Slic3r::GUI::_3DScene::register_action_settings_callback($self->{canvas3D}, $on_action_settings);
         Slic3r::GUI::_3DScene::register_action_layersediting_callback($self->{canvas3D}, $on_action_layersediting);
-        Slic3r::GUI::_3DScene::register_action_selectbyparts_callback($self->{canvas3D}, $on_action_selectbyparts);
+#=================================================================================================================================================    
+#        Slic3r::GUI::_3DScene::register_action_selectbyparts_callback($self->{canvas3D}, $on_action_selectbyparts);
+#=================================================================================================================================================    
         Slic3r::GUI::_3DScene::enable_gizmos($self->{canvas3D}, 1);
         Slic3r::GUI::_3DScene::enable_toolbar($self->{canvas3D}, 1);
         Slic3r::GUI::_3DScene::enable_shader($self->{canvas3D}, 1);
@@ -442,6 +446,9 @@ sub new {
                 my $selections = $self->collect_selections;
                 Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
                 Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
+#===================================================================================================================================                
+print "EVT_NOTEBOOK_PAGE_CHANGED\n";
+#===================================================================================================================================                
             }            
             # sets the canvas as dirty to force a render at the 1st idle event (wxWidgets IsShownOnScreen() is buggy and cannot be used reliably)
             Slic3r::GUI::_3DScene::set_as_dirty($self->{canvas3D});
@@ -1519,7 +1526,10 @@ sub async_apply_config {
             if ($self->{config}->wipe_tower) {
                 my $selections = $self->collect_selections;
                 Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-    	        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1) if $self->{canvas3D}
+    	        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1) if $self->{canvas3D};
+#===================================================================================================================================                
+print "async_apply_config\n";
+#===================================================================================================================================                
             }
         }
     }
@@ -1663,6 +1673,9 @@ sub on_update_print_preview {
     my $selections = $self->collect_selections;
     Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
     Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
+#===================================================================================================================================                
+print "on_update_print_preview\n";
+#===================================================================================================================================                
 }
 
 # This gets called also if we have no threads.
@@ -2002,11 +2015,16 @@ sub update {
     }
     $self->stop_background_process;
     $self->{print}->reload_model_instances();
-    $self->{canvas}->reload_scene if $self->{canvas};
+#=================================================================================================================================================    
+#    $self->{canvas}->reload_scene if $self->{canvas};
+#=================================================================================================================================================    
 #    $self->{canvas}->reload_scene if $self->{canvas};
     my $selections = $self->collect_selections;
     Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
     Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
+#===================================================================================================================================                
+print "update\n";
+#===================================================================================================================================                
     $self->{preview_iface}->reset_gcode_preview_data if $self->{preview_iface};
     $self->{preview_iface}->reload_print if $self->{preview_iface};
 #    $self->{preview3D}->reset_gcode_preview_data if $self->{preview3D};
@@ -2236,10 +2254,15 @@ sub changed_object_settings {
         $self->stop_background_process;
         $self->{print}->reload_object($obj_idx);
         $self->schedule_background_process;
-        $self->{canvas}->reload_scene if $self->{canvas};
+#=================================================================================================================================================    
+#        $self->{canvas}->reload_scene if $self->{canvas};
+#=================================================================================================================================================    
         my $selections = $self->collect_selections;
         Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
         Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
+#===================================================================================================================================                
+print "changed_object_settings\n";
+#===================================================================================================================================                
     } else {
         $self->schedule_background_process;
     }
@@ -2434,6 +2457,9 @@ sub select_object_from_cpp {
             my $selections = $self->collect_selections;
             Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
             Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
+#===================================================================================================================================                
+print "select_object_from_cpp\n";
+#===================================================================================================================================                
         }
         else {
             if ($curr eq 'object') {
@@ -2444,6 +2470,9 @@ sub select_object_from_cpp {
             Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
             Slic3r::GUI::_3DScene::deselect_volumes($self->{canvas3D});
             Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
+#===================================================================================================================================                
+print "select_object_from_cpp\n";
+#===================================================================================================================================                
             my $volume_idx = Slic3r::GUI::_3DScene::get_first_volume_id($self->{canvas3D}, $obj_idx);
 
             my $inst_cnt = $self->{model}->objects->[$obj_idx]->instances_count;

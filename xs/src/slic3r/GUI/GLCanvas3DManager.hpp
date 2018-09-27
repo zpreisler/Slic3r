@@ -184,7 +184,13 @@ public:
     void register_action_cut_callback(wxGLCanvas* canvas, void* callback);
     void register_action_settings_callback(wxGLCanvas* canvas, void* callback);
     void register_action_layersediting_callback(wxGLCanvas* canvas, void* callback);
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_action_selectbyparts_callback(wxGLCanvas* canvas, void* callback);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
 private:
     CanvasesMap::iterator _get_canvas(wxGLCanvas* canvas);

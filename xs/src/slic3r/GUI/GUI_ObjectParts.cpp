@@ -657,7 +657,13 @@ void add_object_to_list(const std::string &name, ModelObject* model_object)
 {
 	wxString item_name = name;
 	auto item = m_objects_model->Add(item_name, model_object->instances.size());
-	m_objects_ctrl->Select(item);
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
+    m_objects_ctrl->Select(item);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
 	// Add error icon if detected auto-repaire
 	auto stats = model_object->volumes[0]->mesh.stl.stats;
@@ -1555,9 +1561,39 @@ void parts_changed(int obj_idx)
 	get_main_frame()->ProcessWindowEvent(e);
 }
 	
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+void reset_settings_value()
+{
+    auto og = get_optgroup(ogFrequentlyObjectSettings);
+    og->set_value("position_x", 0);
+    og->set_value("position_y", 0);
+    og->set_value("position_z", 0);
+    og->set_value("scale_x", 0);
+    og->set_value("scale_y", 0);
+    og->set_value("scale_z", 0);
+    og->set_value("rotation_x", 0);
+    og->set_value("rotation_y", 0);
+    og->set_value("rotation_z", 0);
+    og->disable();
+}
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
+
 void update_settings_value()
 {
-	auto og = get_optgroup(ogFrequentlyObjectSettings);
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    if (m_selected_object_id < 0 || m_objects->size() <= m_selected_object_id)
+    {
+        reset_settings_value();
+        return;
+    }
+
+    auto og = get_optgroup(ogFrequentlyObjectSettings);
+#else
+//##############################################################################################################################################
+    auto og = get_optgroup(ogFrequentlyObjectSettings);
 	if (m_selected_object_id < 0 || m_objects->size() <= m_selected_object_id) {
         og->set_value("position_x", 0);
         og->set_value("position_y", 0);
@@ -1571,6 +1607,9 @@ void update_settings_value()
         og->disable();
 		return;
 	}
+//##############################################################################################################################################
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     g_is_percent_scale = boost::any_cast<wxString>(og->get_value("scale_unit")) == _("%");
     update_position_values();
     update_scale_values();

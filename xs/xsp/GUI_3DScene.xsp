@@ -1,6 +1,7 @@
 %module{Slic3r::XS};
 
 #include <xsinit.h>
+#include "libslic3r/libslic3r.h"
 #include "slic3r/GUI/GLShader.hpp"
 #include "slic3r/GUI/3DScene.hpp"
 
@@ -34,10 +35,6 @@
     std::vector<double> color()
         %code%{ RETVAL.reserve(4); RETVAL.push_back(THIS->color[0]); RETVAL.push_back(THIS->color[1]); RETVAL.push_back(THIS->color[2]); RETVAL.push_back(THIS->color[3]); %};
 
-    int                 select_group_id()
-        %code%{ RETVAL = THIS->select_group_id; %};
-    int                 drag_group_id()
-        %code%{ RETVAL = THIS->drag_group_id; %};
     int                 selected()
         %code%{ RETVAL = THIS->selected; %};
     void                set_selected(int i)
@@ -82,7 +79,11 @@
     GLVolumeCollection();
     ~GLVolumeCollection();
 
+#if ENABLE_EXTENDED_SELECTION
+    std::vector<int> load_object(ModelObject *object, int obj_idx, std::vector<int> instance_idxs, std::string color_by, bool use_VBOs);
+#else
     std::vector<int> load_object(ModelObject *object, int obj_idx, std::vector<int> instance_idxs, std::string color_by, std::string select_by, std::string drag_by, bool use_VBOs);
+#endif // ENABLE_EXTENDED_SELECTION
 
     int load_wipe_tower_preview(int obj_idx, float pos_x, float pos_y, float width, float depth, float height, float rotation_angle, bool use_VBOs, bool size_unknown, float brim_width);
 
@@ -109,8 +110,8 @@
             if (idx > 0 && idx < int(THIS->volumes.size())) {
                 std::swap(THIS->volumes[idx-1], THIS->volumes[idx]);
                 std::swap(THIS->volumes[idx-1]->composite_id,    THIS->volumes[idx]->composite_id);
-                std::swap(THIS->volumes[idx-1]->select_group_id, THIS->volumes[idx]->select_group_id);
-                std::swap(THIS->volumes[idx-1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+//                std::swap(THIS->volumes[idx-1]->select_group_id, THIS->volumes[idx]->select_group_id);
+//                std::swap(THIS->volumes[idx-1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
                 RETVAL = true;
             } else
                 RETVAL = false;
@@ -120,8 +121,8 @@
             if (idx >= 0 && idx + 1 < int(THIS->volumes.size())) {
                 std::swap(THIS->volumes[idx+1], THIS->volumes[idx]);
                 std::swap(THIS->volumes[idx+1]->composite_id,    THIS->volumes[idx]->composite_id);
-                std::swap(THIS->volumes[idx+1]->select_group_id, THIS->volumes[idx]->select_group_id);
-                std::swap(THIS->volumes[idx+1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+//                std::swap(THIS->volumes[idx+1]->select_group_id, THIS->volumes[idx]->select_group_id);
+//                std::swap(THIS->volumes[idx+1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
                 RETVAL = true;
             } else
                 RETVAL = false;
