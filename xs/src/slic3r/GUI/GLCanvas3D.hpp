@@ -491,18 +491,19 @@ class GLCanvas3D
     private:
         VolumesList m_volumes;
         Cache m_positions_cache;
+        Cache m_rotations_cache;
 
     public:
         void add(GLVolume* volume, bool as_single_selection = true);
         void remove(GLVolume* volume);
         void clear();
 
-        void update_positions_cache();
+        void update_caches();
 
-        void set_rotation(const Vec3d& rotation);
         void set_scaling_factor(const Vec3d& scale);
 
         void translate(const Vec3d& displacement);
+        void rotate(const Vec3d& rotation, bool shift_down);
 
         unsigned int count() const { return (unsigned int)m_volumes.size(); }
         bool is_empty() const { return m_volumes.empty(); }

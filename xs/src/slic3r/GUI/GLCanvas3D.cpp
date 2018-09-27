@@ -1994,7 +1994,8 @@ void GLCanvas3D::Selection::add(GLVolume* volume, bool as_single_selection)
         return;
 
     // resets the current list if needed
-    if (as_single_selection || volume->is_wipe_tower || volume->is_modifier)
+    if (as_single_selection)
+//    if (as_single_selection || volume->is_wipe_tower || volume->is_modifier)
         clear();
 
     volume->selected = true;
@@ -2029,24 +2030,18 @@ void GLCanvas3D::Selection::clear()
     std::cout << "Cleared selection" << std::endl;
 }
 
-void GLCanvas3D::Selection::update_positions_cache()
+void GLCanvas3D::Selection::update_caches()
 {
     m_positions_cache.clear();
+    m_rotations_cache.clear();
     if (!m_volumes.empty())
     {
         m_positions_cache.reserve(m_volumes.size());
         for (GLVolume* v : m_volumes)
         {
             m_positions_cache.push_back(v->get_offset());
+            m_rotations_cache.push_back(v->get_rotation());
         }
-    }
-}
-
-void GLCanvas3D::Selection::set_rotation(const Vec3d& rotation)
-{
-    for (GLVolume* v : m_volumes)
-    {
-        v->set_rotation(rotation);
     }
 }
 
@@ -2063,6 +2058,20 @@ void GLCanvas3D::Selection::translate(const Vec3d& displacement)
     for (unsigned int i = 0; i < (unsigned int)m_volumes.size(); ++i)
     {
         m_volumes[i]->set_offset(m_positions_cache[i] + displacement);
+    }
+}
+
+void GLCanvas3D::Selection::rotate(const Vec3d& rotation, bool shift_down)
+{
+    if (shift_down)
+    {
+        for (unsigned int i = 0; i < (unsigned int)m_volumes.size(); ++i)
+        {
+            m_volumes[i]->set_rotation(m_rotations_cache[i] + rotation);
+        }
+    }
+    else
+    {
     }
 }
 
@@ -3611,7 +3620,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             update_gizmos_data();
 //##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
-            m_selection.update_positions_cache();
+            m_selection.update_caches();
             m_gizmos.start_dragging(m_selection.bounding_box());
 #else
 //##############################################################################################################################################
@@ -3627,7 +3636,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 const Vec3d& rotation = m_gizmos.get_flattening_rotation();
 //##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
-                m_selection.set_rotation(rotation);
+                m_selection.rotate(rotation, false);
                 m_regenerate_volumes = false;
 #endif // ENABLE_EXTENDED_SELECTION
 //##############################################################################################################################################
@@ -3893,7 +3902,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 //##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             // Apply new temporary rotation
-            m_selection.set_rotation(m_gizmos.get_rotation());
+            m_selection.rotate(m_gizmos.get_rotation(), evt.ShiftDown());
             if (m_selection.is_single())
                 update_rotation_value(m_selection.get_first_volume()->get_rotation());
             else

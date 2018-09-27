@@ -445,10 +445,10 @@ sub new {
             if (Slic3r::GUI::_3DScene::is_reload_delayed($self->{canvas3D})) {
                 my $selections = $self->collect_selections;
                 Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-                Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
 #===================================================================================================================================                
 print "EVT_NOTEBOOK_PAGE_CHANGED\n";
 #===================================================================================================================================                
+                Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
             }            
             # sets the canvas as dirty to force a render at the 1st idle event (wxWidgets IsShownOnScreen() is buggy and cannot be used reliably)
             Slic3r::GUI::_3DScene::set_as_dirty($self->{canvas3D});
@@ -1526,10 +1526,10 @@ sub async_apply_config {
             if ($self->{config}->wipe_tower) {
                 my $selections = $self->collect_selections;
                 Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-    	        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1) if $self->{canvas3D};
 #===================================================================================================================================                
 print "async_apply_config\n";
 #===================================================================================================================================                
+    	        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1) if $self->{canvas3D};
             }
         }
     }
@@ -1672,10 +1672,10 @@ sub on_update_print_preview {
     # in case this was MM print, wipe tower bounding box on 3D tab might need redrawing with exact depth:
     my $selections = $self->collect_selections;
     Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-    Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
 #===================================================================================================================================                
 print "on_update_print_preview\n";
 #===================================================================================================================================                
+    Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
 }
 
 # This gets called also if we have no threads.
@@ -2021,10 +2021,10 @@ sub update {
 #    $self->{canvas}->reload_scene if $self->{canvas};
     my $selections = $self->collect_selections;
     Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-    Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
 #===================================================================================================================================                
 print "update\n";
 #===================================================================================================================================                
+    Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
     $self->{preview_iface}->reset_gcode_preview_data if $self->{preview_iface};
     $self->{preview_iface}->reload_print if $self->{preview_iface};
 #    $self->{preview3D}->reset_gcode_preview_data if $self->{preview3D};
@@ -2107,8 +2107,10 @@ sub on_config_change {
             $self->{preview_iface}->set_bed_shape($self->{config}->bed_shape) if ($self->{preview_iface});
 #            Slic3r::GUI::_3DScene::set_bed_shape($self->{preview3D}->canvas, $self->{config}->bed_shape) if $self->{preview3D};
             $update_scheduled = 1;
-        } elsif ($opt_key =~ '^wipe_tower' || $opt_key eq 'single_extruder_multi_material') {
-            $update_scheduled = 1;
+#===================================================================================================================================                
+#        } elsif ($opt_key =~ '^wipe_tower' || $opt_key eq 'single_extruder_multi_material') {
+#            $update_scheduled = 1;
+#===================================================================================================================================                
         } elsif ($opt_key eq 'serial_port') {
             $self->{btn_print}->Show($config->get('serial_port'));
             $self->Layout;
@@ -2153,7 +2155,13 @@ sub on_config_change {
         }
     }
 
-    $self->update if $update_scheduled;
+#===================================================================================================================================                
+    if ($update_scheduled) {
+print "on_config_change->update\n";
+        $self->update;
+    }
+#    $self->update if $update_scheduled;
+#===================================================================================================================================                
     
     return if !$self->GetFrame->is_loaded;
     
@@ -2259,10 +2267,10 @@ sub changed_object_settings {
 #=================================================================================================================================================    
         my $selections = $self->collect_selections;
         Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
 #===================================================================================================================================                
 print "changed_object_settings\n";
 #===================================================================================================================================                
+        Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 0);
     } else {
         $self->schedule_background_process;
     }
@@ -2456,10 +2464,10 @@ sub select_object_from_cpp {
 
             my $selections = $self->collect_selections;
             Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
-            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
 #===================================================================================================================================                
 print "select_object_from_cpp\n";
 #===================================================================================================================================                
+            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
         }
         else {
             if ($curr eq 'object') {
@@ -2469,10 +2477,10 @@ print "select_object_from_cpp\n";
             my $selections = [];
             Slic3r::GUI::_3DScene::set_objects_selections($self->{canvas3D}, \@$selections);
             Slic3r::GUI::_3DScene::deselect_volumes($self->{canvas3D});
-            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
 #===================================================================================================================================                
 print "select_object_from_cpp\n";
 #===================================================================================================================================                
+            Slic3r::GUI::_3DScene::reload_scene($self->{canvas3D}, 1);
             my $volume_idx = Slic3r::GUI::_3DScene::get_first_volume_id($self->{canvas3D}, $obj_idx);
 
             my $inst_cnt = $self->{model}->objects->[$obj_idx]->instances_count;
