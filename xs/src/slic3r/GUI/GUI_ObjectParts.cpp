@@ -6,11 +6,9 @@
 #include "wxExtensions.hpp"
 #include "LambdaObjectDialog.hpp"
 #include "../../libslic3r/Utils.hpp"
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 #include "3DScene.hpp"
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 #include <wx/msgdlg.h>
 #include <boost/filesystem.hpp>
@@ -395,9 +393,7 @@ void update_after_moving()
     auto d = m_move_options - m_last_coords;
     auto volume = (*m_objects)[m_selected_object_id]->volumes[volume_id];
     volume->mesh.translate(d(0), d(1), d(2));
-//#####################################################################################################################################################
     volume->get_convex_hull().translate(d(0), d(1), d(2));
-//#####################################################################################################################################################
     m_last_coords = m_move_options;
 
 	m_parts_changed = true;
@@ -665,13 +661,9 @@ void add_object_to_list(const std::string &name, ModelObject* model_object)
 {
 	wxString item_name = name;
 	auto item = m_objects_model->Add(item_name, model_object->instances.size());
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_objects_ctrl->Select(item);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 	// Add error icon if detected auto-repaire
 	auto stats = model_object->volumes[0]->mesh.stl.stats;
@@ -1569,7 +1561,6 @@ void parts_changed(int obj_idx)
 	get_main_frame()->ProcessWindowEvent(e);
 }
 	
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void reset_settings_value()
 {
@@ -1622,11 +1613,9 @@ void update_settings_value(const GLVolumePtrs& volumes)
         reset_settings_value();
 }
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void update_settings_value()
 {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if (m_selected_object_id < 0 || m_objects->size() <= m_selected_object_id)
     {
@@ -1636,7 +1625,6 @@ void update_settings_value()
 
     auto og = get_optgroup(ogFrequentlyObjectSettings);
 #else
-//##############################################################################################################################################
     auto og = get_optgroup(ogFrequentlyObjectSettings);
 	if (m_selected_object_id < 0 || m_objects->size() <= m_selected_object_id) {
         og->set_value("position_x", 0);
@@ -1651,9 +1639,7 @@ void update_settings_value()
         og->disable();
 		return;
 	}
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     g_is_percent_scale = boost::any_cast<wxString>(og->get_value("scale_unit")) == _("%");
     update_position_values();
     update_scale_values();

@@ -594,18 +594,14 @@ void GLCanvas3DManager::register_on_viewport_changed_callback(wxGLCanvas* canvas
         it->second->register_on_viewport_changed_callback(callback);
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 void GLCanvas3DManager::register_on_double_click_callback(wxGLCanvas* canvas, void* callback)
 {
     CanvasesMap::iterator it = _get_canvas(canvas);
     if (it != m_canvases.end())
         it->second->register_on_double_click_callback(callback);
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3DManager::register_on_right_click_callback(wxGLCanvas* canvas, void* callback)
 {
@@ -826,18 +822,14 @@ void GLCanvas3DManager::register_action_layersediting_callback(wxGLCanvas* canva
         it->second->register_action_layersediting_callback(callback);
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 void GLCanvas3DManager::register_action_selectbyparts_callback(wxGLCanvas* canvas, void* callback)
 {
     CanvasesMap::iterator it = _get_canvas(canvas);
     if (it != m_canvases.end())
         it->second->register_action_selectbyparts_callback(callback);
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 GLCanvas3DManager::CanvasesMap::iterator GLCanvas3DManager::_get_canvas(wxGLCanvas* canvas)
 {

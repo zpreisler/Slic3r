@@ -292,16 +292,12 @@ public:
     float               render_color[4];
     // An ID containing the object ID, volume ID and instance ID.
     int                 composite_id;
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     // An ID for group selection. It may be the same for all meshes of all object instances, or for just a single object instance.
     int                 select_group_id;
     // An ID for group dragging. It may be the same for all meshes of all object instances, or for just a single object instance.
     int                 drag_group_id;
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     // An ID containing the extruder ID (used to select color).
     int                 extruder_id;
     // Is this object selected?
@@ -344,11 +340,9 @@ public:
     const Vec3d& get_rotation() const;
     void set_rotation(const Vec3d& rotation);
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     const Vec3d& get_scaling_factor() const;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     void set_scaling_factor(const Vec3d& scaling_factor);
 #else
     double get_rotation() const;
@@ -362,14 +356,10 @@ public:
 
     void set_convex_hull(const TriangleMesh& convex_hull);
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     void set_select_group_id(const std::string& select_by);
     void set_drag_group_id(const std::string& drag_by);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     int                 object_idx() const { return this->composite_id / 1000000; }
     int                 volume_idx() const { return (this->composite_id / 1000) % 1000; }
@@ -427,11 +417,9 @@ public:
     void reset_layer_height_texture_data() { layer_height_texture_data.reset(); }
 };
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 typedef std::vector<GLVolume*> GLVolumePtrs;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 class GLVolumeCollection
 {
@@ -440,20 +428,15 @@ class GLVolumeCollection
     float print_box_max[3];
 
 public:
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     GLVolumePtrs volumes;
 #else
-//##############################################################################################################################################
     std::vector<GLVolume*> volumes;
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     GLVolumeCollection() {};
     ~GLVolumeCollection() { clear(); };
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     std::vector<int> load_object(
         const ModelObject       *model_object,
@@ -462,7 +445,6 @@ public:
         const std::string       &color_by,
         bool                     use_VBOs);
 #else
-//##############################################################################################################################################
     std::vector<int> load_object(
         const ModelObject       *model_object,
         int                      obj_idx,
@@ -471,9 +453,7 @@ public:
         const std::string       &select_by,
         const std::string       &drag_by,
         bool                     use_VBOs);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     int load_wipe_tower_preview(
         int obj_idx, float pos_x, float pos_y, float width, float depth, float height, float rotation_angle, bool use_VBOs, bool size_unknown, float brim_width);
@@ -507,14 +487,10 @@ public:
 
     void update_colors_by_extruder(const DynamicPrintConfig* config);
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     void set_select_by(const std::string& select_by);
     void set_drag_by(const std::string& drag_by);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     // Returns a vector containing the sorted list of all the print_zs of the volumes contained in this collection
     std::vector<double> get_current_print_zs(bool active_only) const;

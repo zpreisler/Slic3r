@@ -1086,15 +1086,11 @@ GLCanvas3D::Mouse::Drag::Drag()
     : start_position_2D(Invalid_2D_Point)
     , start_position_3D(Invalid_3D_Point)
     , volume_center_offset(0, 0, 0)
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , move_with_shift(false)
     , move_volume_idx(-1)
     , gizmo_volume_idx(-1)
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 {
 }
 
@@ -1225,15 +1221,11 @@ void GLCanvas3D::Gizmos::set_enabled(bool enable)
     m_enabled = enable;
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void GLCanvas3D::Gizmos::update_hover_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos, bool wipe_tower)
 #else
-//##############################################################################################################################################
 void GLCanvas3D::Gizmos::update_hover_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 {
     if (!m_enabled)
         return;
@@ -1250,15 +1242,11 @@ void GLCanvas3D::Gizmos::update_hover_state(const GLCanvas3D& canvas, const Vec2
         float half_tex_size = 0.5f * tex_size;
 
         // we currently use circular icons for gizmo, so we check the radius
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         if ((it->second->get_state() != GLGizmoBase::On) && (!wipe_tower || it->second->get_accept_wipe_tower()))
 #else
-//##############################################################################################################################################
         if (it->second->get_state() != GLGizmoBase::On)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         {
             bool inside = (mouse_pos - Vec2d(OverlayOffsetX + half_tex_size, top_y + half_tex_size)).norm() < half_tex_size;
             it->second->set_state(inside ? GLGizmoBase::Hover : GLGizmoBase::Off);
@@ -1267,15 +1255,11 @@ void GLCanvas3D::Gizmos::update_hover_state(const GLCanvas3D& canvas, const Vec2
     }
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void GLCanvas3D::Gizmos::update_on_off_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos, bool wipe_tower)
 #else
-//##############################################################################################################################################
 void GLCanvas3D::Gizmos::update_on_off_state(const GLCanvas3D& canvas, const Vec2d& mouse_pos)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 {
     if (!m_enabled)
         return;
@@ -1292,15 +1276,11 @@ void GLCanvas3D::Gizmos::update_on_off_state(const GLCanvas3D& canvas, const Vec
         float half_tex_size = 0.5f * tex_size;
 
         // we currently use circular icons for gizmo, so we check the radius
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         if ((!wipe_tower || it->second->get_accept_wipe_tower()) && ((mouse_pos - Vec2d(OverlayOffsetX + half_tex_size, top_y + half_tex_size)).norm() < half_tex_size))
 #else
-//##############################################################################################################################################
         if ((mouse_pos - Vec2d(OverlayOffsetX + half_tex_size, top_y + half_tex_size)).norm() < half_tex_size)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         {
             if ((it->second->get_state() == GLGizmoBase::On))
             {
@@ -1440,7 +1420,6 @@ void GLCanvas3D::Gizmos::stop_dragging()
         curr->stop_dragging();
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 Vec3d GLCanvas3D::Gizmos::get_displacement() const
 {
@@ -1451,7 +1430,6 @@ Vec3d GLCanvas3D::Gizmos::get_displacement() const
     return (it != m_gizmos.end()) ? reinterpret_cast<GLGizmoMove3D*>(it->second)->get_displacement() : Vec3d::Zero();
 }
 #else
-//##############################################################################################################################################
 Vec3d GLCanvas3D::Gizmos::get_position() const
 {
     if (!m_enabled)
@@ -1470,9 +1448,7 @@ void GLCanvas3D::Gizmos::set_position(const Vec3d& position)
     if (it != m_gizmos.end())
         reinterpret_cast<GLGizmoMove3D*>(it->second)->set_position(position);
 }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
 Vec3d GLCanvas3D::Gizmos::get_scale() const
@@ -1982,7 +1958,6 @@ void GLCanvas3D::LegendTexture::render(const GLCanvas3D& canvas) const
     }
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 GLCanvas3D::Selection::VolumeCache::VolumeCache(const Vec3d& position, const Vec3d& rotation, const Vec3d& scaling_factor)
     : position(position), rotation(rotation), scaling_factor(scaling_factor)
@@ -2207,7 +2182,6 @@ void GLCanvas3D::Selection::calc_bounding_box() const
 }
 
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 GLGizmoBase* GLCanvas3D::Gizmos::_get_current() const
 {
@@ -2233,30 +2207,20 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas)
     , m_warning_texture_enabled(false)
     , m_legend_texture_enabled(false)
     , m_picking_enabled(false)
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , m_moving_enabled(false)
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , m_shader_enabled(false)
     , m_dynamic_background_enabled(false)
     , m_multisample_allowed(false)
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     , m_regenerate_volumes(true)
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , m_color_by("volume")
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , m_select_by("object")
     , m_drag_by("instance")
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     , m_reload_delayed(false)
 {
     if (m_canvas != nullptr)
@@ -2389,11 +2353,9 @@ void GLCanvas3D::reset_volumes()
 
         m_volumes.release_geometry();
         m_volumes.clear();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         m_selection.clear();
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         m_dirty = true;
     }
 
@@ -2403,40 +2365,30 @@ void GLCanvas3D::reset_volumes()
 
 void GLCanvas3D::deselect_volumes()
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     for (GLVolume* vol : m_volumes.volumes)
     {
         if (vol != nullptr)
             vol->selected = false;
     }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::select_volume(unsigned int id)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     if (id < (unsigned int)m_volumes.volumes.size())
     {
         GLVolume* vol = m_volumes.volumes[id];
         if (vol != nullptr)
             vol->selected = true;
     }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::update_volumes_selection(const std::vector<int>& selections)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     if (m_model == nullptr)
         return;
 
@@ -2454,9 +2406,7 @@ void GLCanvas3D::update_volumes_selection(const std::vector<int>& selections)
             }
         }
     }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 int GLCanvas3D::check_volumes_outside_state(const DynamicPrintConfig* config) const
@@ -2472,14 +2422,10 @@ bool GLCanvas3D::move_volume_up(unsigned int id)
     {
         std::swap(m_volumes.volumes[id - 1], m_volumes.volumes[id]);
         std::swap(m_volumes.volumes[id - 1]->composite_id, m_volumes.volumes[id]->composite_id);
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         std::swap(m_volumes.volumes[id - 1]->select_group_id, m_volumes.volumes[id]->select_group_id);
         std::swap(m_volumes.volumes[id - 1]->drag_group_id, m_volumes.volumes[id]->drag_group_id);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         return true;
     }
 
@@ -2492,14 +2438,10 @@ bool GLCanvas3D::move_volume_down(unsigned int id)
     {
         std::swap(m_volumes.volumes[id + 1], m_volumes.volumes[id]);
         std::swap(m_volumes.volumes[id + 1]->composite_id, m_volumes.volumes[id]->composite_id);
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         std::swap(m_volumes.volumes[id + 1]->select_group_id, m_volumes.volumes[id]->select_group_id);
         std::swap(m_volumes.volumes[id + 1]->drag_group_id, m_volumes.volumes[id]->drag_group_id);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         return true;
     }
 
@@ -2508,13 +2450,9 @@ bool GLCanvas3D::move_volume_down(unsigned int id)
 
 void GLCanvas3D::set_objects_selections(const std::vector<int>& selections)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_objects_selections = selections;
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::set_config(DynamicPrintConfig* config)
@@ -2589,29 +2527,20 @@ void GLCanvas3D::set_color_by(const std::string& value)
 
 void GLCanvas3D::set_select_by(const std::string& value)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_select_by = value;
     m_volumes.set_select_by(value);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::set_drag_by(const std::string& value)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_drag_by = value;
     m_volumes.set_drag_by(value);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 std::string GLCanvas3D::get_select_by() const
 {
@@ -2623,7 +2552,6 @@ std::string GLCanvas3D::get_drag_by() const
     return "instance";
 }
 #else
-//##############################################################################################################################################
 const std::string& GLCanvas3D::get_select_by() const
 {
     return m_select_by;
@@ -2633,9 +2561,7 @@ const std::string& GLCanvas3D::get_drag_by() const
 {
     return m_drag_by;
 }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 float GLCanvas3D::get_camera_zoom() const
 {
@@ -2695,13 +2621,9 @@ void GLCanvas3D::enable_picking(bool enable)
 
 void GLCanvas3D::enable_moving(bool enable)
 {
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_moving_enabled = enable;
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::enable_gizmos(bool enable)
@@ -2810,7 +2732,6 @@ void GLCanvas3D::update_gizmos_data()
     if (!m_gizmos.is_enabled())
         return;
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if (m_selection.is_single_volume())
     {
@@ -2826,7 +2747,6 @@ void GLCanvas3D::update_gizmos_data()
         m_gizmos.set_flattening_data(nullptr);
     }
 #else
-//##############################################################################################################################################
     int id = _get_first_selected_object_id();
     if ((id != -1) && (m_model != nullptr))
     {
@@ -2861,9 +2781,7 @@ void GLCanvas3D::update_gizmos_data()
 #endif // ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
         m_gizmos.set_flattening_data(nullptr);
     }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::render()
@@ -2942,15 +2860,11 @@ std::vector<int> GLCanvas3D::load_object(const ModelObject& model_object, int ob
             instance_idxs.push_back(i);
         }
     }
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     return m_volumes.load_object(&model_object, obj_idx, instance_idxs, m_color_by, m_use_VBOs && m_initialized);
 #else
-//##############################################################################################################################################
     return m_volumes.load_object(&model_object, obj_idx, instance_idxs, m_color_by, m_select_by, m_drag_by, m_use_VBOs && m_initialized);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 std::vector<int> GLCanvas3D::load_object(const Model& model, int obj_idx)
@@ -2986,24 +2900,18 @@ void GLCanvas3D::reload_scene(bool force)
     if ((m_canvas == nullptr) || (m_config == nullptr) || (m_model == nullptr))
         return;
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     reset_volumes();
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     // ensures this canvas is current
     if (!set_current())
         return;
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if (m_regenerate_volumes)
         reset_volumes();
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     set_bed_shape(dynamic_cast<const ConfigOptionPoints*>(m_config->option("bed_shape"))->values);
 
@@ -3015,7 +2923,6 @@ void GLCanvas3D::reload_scene(bool force)
 
     m_reload_delayed = false;
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if (m_regenerate_volumes)
     {
@@ -3027,7 +2934,6 @@ void GLCanvas3D::reload_scene(bool force)
 
     update_gizmos_data();
 #else
-//##############################################################################################################################################
     m_objects_volumes_idxs.clear();
 
     for (unsigned int obj_idx = 0; obj_idx < (unsigned int)m_model->objects.size(); ++obj_idx)
@@ -3041,15 +2947,11 @@ void GLCanvas3D::reload_scene(bool force)
     // 2nd call to restore selection, if any
     if (!m_objects_selections.empty())
         update_gizmos_data();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if (m_regenerate_volumes)
     {
-//##############################################################################################################################################
         if (m_config->has("nozzle_diameter"))
         {
             // Should the wipe tower be visualized ?
@@ -3079,10 +2981,8 @@ void GLCanvas3D::reload_scene(bool force)
         }
 
         update_volumes_colors_by_extruder();
-//##############################################################################################################################################
     }
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     // checks for geometry outside the print volume to render it accordingly
     if (!m_volumes.empty())
@@ -3111,11 +3011,9 @@ void GLCanvas3D::reload_scene(bool force)
         m_on_enable_action_buttons_callback.call(false);
     }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     m_regenerate_volumes = true;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::load_gcode_preview(const GCodePreviewData& preview_data, const std::vector<std::string>& str_tool_colors)
@@ -3186,17 +3084,13 @@ void GLCanvas3D::register_on_viewport_changed_callback(void* callback)
         m_on_viewport_changed_callback.register_callback(callback);
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 void GLCanvas3D::register_on_double_click_callback(void* callback)
 {
     if (callback != nullptr)
         m_on_double_click_callback.register_callback(callback);
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3D::register_on_right_click_callback(void* callback)
 {
@@ -3386,17 +3280,13 @@ void GLCanvas3D::register_action_layersediting_callback(void* callback)
         m_action_layersediting_callback.register_callback(callback);
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 void GLCanvas3D::register_action_selectbyparts_callback(void* callback)
 {
     if (callback != nullptr)
         m_action_selectbyparts_callback.register_callback(callback);
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3D::bind_event_handlers()
 {
@@ -3527,15 +3417,11 @@ void GLCanvas3D::on_mouse_wheel(wxMouseEvent& evt)
     // Performs layers editing updates, if enabled
     if (is_layers_editing_enabled())
     {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         int object_idx_selected = m_selection.get_first_modelobject_id();
 #else
-//##############################################################################################################################################
         int object_idx_selected = _get_first_selected_object_id();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         if (object_idx_selected != -1)
         {
             // A volume is selected. Test, whether hovering over a layer thickness bar.
@@ -3579,15 +3465,11 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 {
     Point pos(evt.GetX(), evt.GetY());
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     int selected_object_idx = m_selection.get_first_modelobject_id();
 #else
-//##############################################################################################################################################
     int selected_object_idx = _get_first_selected_object_id();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     int layer_editing_object_idx = is_layers_editing_enabled() ? selected_object_idx : -1;
     m_layers_editing.last_object_id = layer_editing_object_idx;
     bool gizmos_overlay_contains_mouse = m_gizmos.overlay_contains_mouse(*this, m_mouse.position);
@@ -3609,7 +3491,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         m_mouse.position = Vec2d(-1.0, -1.0);
         m_dirty = true;
     }
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     else if (evt.LeftDClick() && m_picking_enabled && (m_hover_volume_id != -1) && !gizmos_overlay_contains_mouse && (toolbar_contains_mouse == -1))
     {
@@ -3631,23 +3512,10 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         update_settings_value(m_selection.get_volumes());
         m_dirty = true;
     }
-//    else if (evt.ButtonDClick() && m_picking_enabled && (m_hover_volume_id != -1) && !gizmos_overlay_contains_mouse && (toolbar_contains_mouse == -1))
-//    {
-//        if (evt.RightDClick())
-//        {
-//            _select_object(m_hover_volume_id, !evt.ShiftDown());
-//
-//            update_settings_value(m_selection.get_volumes());
-//            m_dirty = true;
-//        }
-//    }
 #else
-//##############################################################################################################################################
     else if (evt.LeftDClick() && (m_hover_volume_id != -1) && !gizmos_overlay_contains_mouse && (toolbar_contains_mouse == -1))
         m_on_double_click_callback.call();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     else if (evt.LeftDClick() && (toolbar_contains_mouse != -1))
     {
         m_toolbar_action_running = true;
@@ -3658,21 +3526,17 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
     {
         m_mouse.ignore_up_event = true;
         m_gizmos.process_double_click();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         m_regenerate_volumes = false;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         switch (m_gizmos.get_current_type())
         {
         case Gizmos::Scale:
         {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             if (m_selection.is_single_volume())
             {
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
                 const Vec3d& scale = m_gizmos.get_scale();
                 m_on_gizmo_scale_3D_callback.call(scale(0), scale(1), scale(2));
@@ -3681,21 +3545,17 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 #endif // ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
                 update_scale_values();
                 m_dirty = true;
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             }
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             break;
         }
         case Gizmos::Rotate:
         {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             if (m_selection.is_single_volume())
             {
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
                 const Vec3d& rotation = m_gizmos.get_rotation();
                 m_on_gizmo_rotate_3D_callback.call(rotation(0), rotation(1), rotation(2));
@@ -3704,11 +3564,9 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 #endif // ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
                 update_rotation_values();
                 m_dirty = true;
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             }
 #endif // ENABLE_EXTENDED_SELECTION
- //##############################################################################################################################################
                 break;
         }
         default:
@@ -3745,61 +3603,43 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 m_dirty = true;
             }
         }
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         else if (!m_selection.is_empty() && gizmos_overlay_contains_mouse)
 #else
-//##############################################################################################################################################
         else if ((selected_object_idx != -1) && gizmos_overlay_contains_mouse)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         {
             update_gizmos_data();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             m_gizmos.update_on_off_state(*this, m_mouse.position, m_selection.contains_wipe_tower());
 #else
-//##############################################################################################################################################
             m_gizmos.update_on_off_state(*this, m_mouse.position);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             m_dirty = true;
         }
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         else if (!m_selection.is_empty() && m_gizmos.grabber_contains_mouse())
 #else
-//##############################################################################################################################################
         else if ((selected_object_idx != -1) && m_gizmos.grabber_contains_mouse())
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         {
             update_gizmos_data();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             m_selection.start_dragging();
             m_gizmos.start_dragging(m_selection.get_bounding_box());
 #else
-//##############################################################################################################################################
             m_gizmos.start_dragging(_selected_volumes_bounding_box());
             m_mouse.drag.gizmo_volume_idx = _get_first_selected_volume_id(selected_object_idx);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
             if (m_gizmos.get_current_type() == Gizmos::Flatten) {
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
                 // Rotate the object so the normal points downward:
                 const Vec3d& rotation = m_gizmos.get_flattening_rotation();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 m_selection.rotate(rotation, false);
                 m_regenerate_volumes = false;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
                 m_on_gizmo_flatten_3D_callback.call(rotation(0), rotation(1), rotation(2));
 #else
                 // Rotate the object so the normal points downward:
@@ -3829,7 +3669,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             {
                 if (volume_idx != -1)
                 {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                     if (evt.ControlDown())
                         m_selection.remove(m_volumes.volumes[volume_idx]);
@@ -3838,7 +3677,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 
                     update_settings_value(m_selection.get_volumes());
 #else
-//##############################################################################################################################################
                     deselect_volumes();
                     select_volume(volume_idx);
                     int group_id = m_volumes.volumes[volume_idx]->select_group_id;
@@ -3850,9 +3688,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                                 vol->selected = true;
                         }
                     }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
                     update_gizmos_data();
                     m_dirty = true;
@@ -3865,11 +3701,9 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 
             if (volume_idx != -1)
             {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 if (evt.RightDown())
 #else
-//##############################################################################################################################################
                 if (evt.LeftDown() && m_moving_enabled)
                 {
                     // The mouse_to_3d gets the Z coordinate from the Z buffer at the screen coordinate pos x, y,
@@ -3891,9 +3725,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                     }
                 }
                 else if (evt.RightDown())
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
                 {
                     // forces a frame render to ensure that m_hover_volume_id is updated even when the user right clicks while
                     // the context menu is already shown, ensuring it to disappear if the mouse is outside any volume
@@ -3909,9 +3741,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             }
         }
     }
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     else if (evt.Dragging() && evt.LeftIsDown() && !gizmos_overlay_contains_mouse && (m_layers_editing.state == LayersEditing::Unknown) && (m_mouse.drag.move_volume_idx != -1))
     {
         m_mouse.dragging = true;
@@ -3964,9 +3794,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 
         m_dirty = true;
     }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     else if (evt.Dragging() && m_gizmos.is_dragging())
     {
         if (!m_canvas->HasCapture())
@@ -3975,9 +3803,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         m_mouse.dragging = true;
         m_gizmos.update(mouse_ray(pos));
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         std::vector<GLVolume*> volumes;
         if (m_mouse.drag.gizmo_volume_idx != -1)
         {
@@ -3994,16 +3820,13 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 }
             }
         }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
         switch (m_gizmos.get_current_type())
         {
         case Gizmos::Move:
         {
             // Apply new temporary offset
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             m_selection.translate(m_gizmos.get_displacement());
             _synchronize_instances();
@@ -4012,7 +3835,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             else
                 reset_settings_value();
 #else
-//##############################################################################################################################################
             GLVolume* volume = m_volumes.volumes[m_mouse.drag.gizmo_volume_idx];
             Vec3d offset = m_gizmos.get_position() - volume->get_offset();
             for (GLVolume* v : volumes)
@@ -4020,15 +3842,12 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 v->set_offset(v->get_offset() + offset);
             }
             update_position_values(volume->get_offset());
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             break;
         }
         case Gizmos::Scale:
         {
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             // Apply new temporary scale factors
             m_selection.set_scaling_factor(m_gizmos.get_scale());
@@ -4038,7 +3857,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             else
                 reset_settings_value();
 #else
-//##############################################################################################################################################
             // Apply new temporary scale factors
             const Vec3d& scale = m_gizmos.get_scale();
             for (GLVolume* v : volumes)
@@ -4046,9 +3864,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 v->set_scaling_factor(scale);
             }
             update_scale_values(scale);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 #else
             // Apply new temporary scale factor
             float scale_factor = m_gizmos.get_scale();
@@ -4063,7 +3879,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         case Gizmos::Rotate:
         {
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             // Apply new temporary rotation
             m_selection.rotate(m_gizmos.get_rotation(), evt.ShiftDown());
@@ -4073,7 +3888,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             else
                 reset_settings_value();
 #else
-//##############################################################################################################################################
             // Apply new temporary rotation
             const Vec3d& rotation = m_gizmos.get_rotation();
             for (GLVolume* v : volumes)
@@ -4081,9 +3895,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 v->set_rotation(rotation);
         }
             update_rotation_value(rotation);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 #else
             // Apply new temporary angle_z
             float angle_z = m_gizmos.get_angle_z();
@@ -4099,7 +3911,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             break;
         }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         if (m_selection.is_single_volume())
         {
@@ -4113,7 +3924,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 #endif // ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
         }
 #else
-//##############################################################################################################################################
         if (!volumes.empty())
         {
             BoundingBoxf3 bb;
@@ -4129,9 +3939,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             m_on_update_geometry_info_callback.call(size(0), size(1), size(2), m_gizmos.get_scale());
 #endif // ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
         }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
         m_dirty = true;
     }
@@ -4188,9 +3996,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             if (layer_editing_object_idx != -1)
                 m_on_model_update_callback.call();
         }
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         else if ((m_mouse.drag.move_volume_idx != -1) && m_mouse.dragging)
         {
             // get all volumes belonging to the same group, if any
@@ -4214,9 +4020,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             if ((volume_idxs.size() == 1) && m_volumes.volumes[volume_idxs[0]]->is_wipe_tower)
                 select_volume(volume_idxs[0]);
         }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         else if (evt.LeftUp() && !m_mouse.dragging && (m_hover_volume_id == -1) && !gizmos_overlay_contains_mouse && !m_gizmos.is_dragging() && !is_layers_editing_enabled())
         {
             // deselect and propagate event through callback
@@ -4226,16 +4030,12 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             if (m_picking_enabled && !m_toolbar_action_running)
 #endif // ENABLE_GIZMOS_RESET
             {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 m_selection.clear();
                 reset_settings_value();
 #else
-//##############################################################################################################################################
                 deselect_volumes();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
                 _on_select(-1, -1);
                 update_gizmos_data();
             }
@@ -4250,12 +4050,10 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             {
             case Gizmos::Move:
             {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 m_regenerate_volumes = false;
                 _on_move();
 #else
-//##############################################################################################################################################
                 // get all volumes belonging to the same group, if any
                 std::vector<int> volume_idxs;
                 int vol_id = m_mouse.drag.gizmo_volume_idx;
@@ -4272,19 +4070,15 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 }
 
                 _on_move(volume_idxs);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
                 break;
             }
             case Gizmos::Scale:
             {
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 m_regenerate_volumes = false;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
                 const Vec3d& scale = m_gizmos.get_scale();
                 m_on_gizmo_scale_3D_callback.call(scale(0), scale(1), scale(2));
@@ -4296,11 +4090,9 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             case Gizmos::Rotate:
             {
 #if ENABLE_MODELINSTANCE_3D_FULL_TRANSFORM
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 m_regenerate_volumes = false;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
                 const Vec3d& rotation = m_gizmos.get_rotation();
                 m_on_gizmo_rotate_3D_callback.call(rotation(0), rotation(1), rotation(2));
@@ -4313,25 +4105,17 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                 break;
             }
             m_gizmos.stop_dragging();
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             update_settings_value(m_selection.get_volumes());
 #else
-//##############################################################################################################################################
             update_settings_value();
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         m_mouse.drag.move_volume_idx = -1;
         m_mouse.drag.gizmo_volume_idx = -1;
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         m_mouse.set_start_position_3D_as_invalid();
         m_mouse.set_start_position_2D_as_invalid();
         m_mouse.dragging = false;
@@ -4533,9 +4317,7 @@ bool GLCanvas3D::_init_toolbar()
     if (!m_toolbar.add_separator())
         return false;
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     item.name = "selectbyparts";
     item.tooltip = GUI::L_str("Select by parts");
     item.sprite_id = 10;
@@ -4543,9 +4325,7 @@ bool GLCanvas3D::_init_toolbar()
     item.action_callback = &m_action_selectbyparts_callback;
     if (!m_toolbar.add_item(item))
         return false;
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     enable_toolbar_item("add", true);
 
@@ -4627,9 +4407,7 @@ BoundingBoxf3 GLCanvas3D::_max_bounding_box() const
     return bb;
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 BoundingBoxf3 GLCanvas3D::_selected_volumes_bounding_box() const
 {
     BoundingBoxf3 bb;
@@ -4674,9 +4452,7 @@ BoundingBoxf3 GLCanvas3D::_selected_volumes_bounding_box() const
 
     return bb;
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3D::_zoom_to_bounding_box(const BoundingBoxf3& bbox)
 {
@@ -4764,13 +4540,9 @@ float GLCanvas3D::_get_zoom_to_bounding_box_factor(const BoundingBoxf3& bbox) co
 void GLCanvas3D::_deregister_callbacks()
 {
     m_on_viewport_changed_callback.deregister_callback();
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_on_double_click_callback.deregister_callback();
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_on_right_click_callback.deregister_callback();
     m_on_select_object_callback.deregister_callback();
     m_on_model_update_callback.deregister_callback();
@@ -4806,13 +4578,9 @@ void GLCanvas3D::_deregister_callbacks()
     m_action_cut_callback.deregister_callback();
     m_action_settings_callback.deregister_callback();
     m_action_layersediting_callback.deregister_callback();
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     m_action_selectbyparts_callback.deregister_callback();
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::_mark_volumes_for_layer_height() const
@@ -4822,15 +4590,11 @@ void GLCanvas3D::_mark_volumes_for_layer_height() const
 
     for (GLVolume* vol : m_volumes.volumes)
     {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         int object_id = vol->object_idx();
 #else
-//##############################################################################################################################################
         int object_id = int(vol->select_group_id / 1000000);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         int shader_id = m_layers_editing.get_shader_program_id();
 
         if (is_layers_editing_enabled() && (shader_id != -1) && vol->selected &&
@@ -4886,15 +4650,11 @@ void GLCanvas3D::_picking_pass() const
         ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         _render_volumes(true);
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         m_gizmos.render_current_gizmo_for_picking_pass(m_selection.get_bounding_box());
 #else
-//##############################################################################################################################################
         m_gizmos.render_current_gizmo_for_picking_pass(_selected_volumes_bounding_box());
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
         if (m_multisample_allowed)
             ::glEnable(GL_MULTISAMPLE);
@@ -4918,9 +4678,7 @@ void GLCanvas3D::_picking_pass() const
         {
             m_hover_volume_id = volume_id;
             m_volumes.volumes[volume_id]->hover = true;
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             int group_id = m_volumes.volumes[volume_id]->select_group_id;
             if (group_id != -1)
             {
@@ -4930,9 +4688,7 @@ void GLCanvas3D::_picking_pass() const
                         vol->hover = true;
                 }
             }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             m_gizmos.set_hover_id(-1);
         }
         else
@@ -4942,17 +4698,13 @@ void GLCanvas3D::_picking_pass() const
         }
 
         // updates gizmos overlay
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         if (!m_selection.is_empty())
             m_gizmos.update_hover_state(*this, pos, m_selection.contains_wipe_tower());
 #else
-//##############################################################################################################################################
         if (_get_first_selected_object_id() != -1)
             m_gizmos.update_hover_state(*this, pos);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         else
             m_gizmos.reset_all_states();
 
@@ -5094,15 +4846,11 @@ void GLCanvas3D::_render_layer_editing_overlay() const
 
     // If the active object was not allocated at the Print, go away.This should only be a momentary case between an object addition / deletion
     // and an update by Platter::async_apply_config.
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     int object_idx = volume->object_idx();
 #else
-//##############################################################################################################################################
     int object_idx = int(volume->select_group_id / 1000000);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     if ((int)m_print->objects().size() < object_idx)
         return;
 
@@ -5162,15 +4910,11 @@ void GLCanvas3D::_render_volumes(bool fake_colors) const
 
 void GLCanvas3D::_render_current_gizmo() const
 {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     m_gizmos.render_current_gizmo(m_selection.get_bounding_box());
 #else
-//##############################################################################################################################################
     m_gizmos.render_current_gizmo(_selected_volumes_bounding_box());
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
 void GLCanvas3D::_render_gizmos_overlay() const
@@ -5288,9 +5032,7 @@ void GLCanvas3D::_stop_timer()
         m_timer->Stop();
 }
 
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 int GLCanvas3D::_get_first_selected_object_id() const
 {
     if (m_print != nullptr)
@@ -5324,9 +5066,7 @@ int GLCanvas3D::_get_first_selected_volume_id(int object_id) const
 
     return -1;
 }
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3D::_load_print_toolpaths()
 {
@@ -5453,15 +5193,11 @@ void GLCanvas3D::_load_print_object_toolpaths(const PrintObject& print_object, c
     tbb::parallel_for(
         tbb::blocked_range<size_t>(0, ctxt.layers.size(), grain_size),
         [&ctxt, &new_volume](const tbb::blocked_range<size_t>& range) {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         GLVolumePtrs vols;
 #else
-//##############################################################################################################################################
         std::vector<GLVolume*> vols;
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         if (ctxt.color_by_tool()) {
             for (size_t i = 0; i < ctxt.number_tools(); ++i)
                 vols.emplace_back(new_volume(ctxt.color_tool(i)));
@@ -5620,15 +5356,11 @@ void GLCanvas3D::_load_wipe_tower_toolpaths(const std::vector<std::string>& str_
         tbb::blocked_range<size_t>(0, n_items, grain_size),
         [&ctxt, &new_volume](const tbb::blocked_range<size_t>& range) {
         // Bounding box of this slab of a wipe tower.
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         GLVolumePtrs vols;
 #else
-//##############################################################################################################################################
         std::vector<GLVolume*> vols;
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         if (ctxt.color_by_tool()) {
             for (size_t i = 0; i < ctxt.number_tools(); ++i)
                 vols.emplace_back(new_volume(ctxt.color_tool(i)));
@@ -5854,19 +5586,15 @@ void GLCanvas3D::_load_gcode_extrusion_paths(const GCodePreviewData& preview_dat
             m_gcode_preview_volume_index.first_volumes.pop_back();
             if (initial_volumes_count != m_volumes.volumes.size())
             {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
                 GLVolumePtrs::iterator begin = m_volumes.volumes.begin() + initial_volumes_count;
                 GLVolumePtrs::iterator end = m_volumes.volumes.end();
                 for (GLVolumePtrs::iterator it = begin; it < end; ++it)
 #else
-//##############################################################################################################################################
                 std::vector<GLVolume*>::iterator begin = m_volumes.volumes.begin() + initial_volumes_count;
                 std::vector<GLVolume*>::iterator end = m_volumes.volumes.end();
                 for (std::vector<GLVolume*>::iterator it = begin; it < end; ++it)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
                 {
                     GLVolume* volume = *it;
                     delete volume;
@@ -5937,19 +5665,15 @@ void GLCanvas3D::_load_gcode_travel_paths(const GCodePreviewData& preview_data, 
         // an error occourred - restore to previous state and return
         if (initial_volumes_count != m_volumes.volumes.size())
         {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
             GLVolumePtrs::iterator begin = m_volumes.volumes.begin() + initial_volumes_count;
             GLVolumePtrs::iterator end = m_volumes.volumes.end();
             for (GLVolumePtrs::iterator it = begin; it < end; ++it)
 #else
-//##############################################################################################################################################
             std::vector<GLVolume*>::iterator begin = m_volumes.volumes.begin() + initial_volumes_count;
             std::vector<GLVolume*>::iterator end = m_volumes.volumes.end();
             for (std::vector<GLVolume*>::iterator it = begin; it < end; ++it)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
             {
                 GLVolume* volume = *it;
                 delete volume;
@@ -6253,15 +5977,11 @@ void GLCanvas3D::_load_shells()
             instance_ids[i] = i;
         }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         m_volumes.load_object(model_obj, object_id, instance_ids, "object", m_use_VBOs && m_initialized);
 #else
-//##############################################################################################################################################
         m_volumes.load_object(model_obj, object_id, instance_ids, "object", "object", "object", m_use_VBOs && m_initialized);
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
         ++object_id;
     }
@@ -6284,21 +6004,17 @@ void GLCanvas3D::_update_gcode_volumes_visibility(const GCodePreviewData& previe
     unsigned int size = (unsigned int)m_gcode_preview_volume_index.first_volumes.size();
     for (unsigned int i = 0; i < size; ++i)
     {
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
         GLVolumePtrs::iterator begin = m_volumes.volumes.begin() + m_gcode_preview_volume_index.first_volumes[i].id;
         GLVolumePtrs::iterator end = (i + 1 < size) ? m_volumes.volumes.begin() + m_gcode_preview_volume_index.first_volumes[i + 1].id : m_volumes.volumes.end();
 
         for (GLVolumePtrs::iterator it = begin; it != end; ++it)
 #else
-//##############################################################################################################################################
         std::vector<GLVolume*>::iterator begin = m_volumes.volumes.begin() + m_gcode_preview_volume_index.first_volumes[i].id;
         std::vector<GLVolume*>::iterator end = (i + 1 < size) ? m_volumes.volumes.begin() + m_gcode_preview_volume_index.first_volumes[i + 1].id : m_volumes.volumes.end();
 
         for (std::vector<GLVolume*>::iterator it = begin; it != end; ++it)
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
         {
             GLVolume* volume = *it;
 
@@ -6387,7 +6103,6 @@ void GLCanvas3D::_show_warning_texture_if_needed()
     }
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void GLCanvas3D::_on_move()
 {
@@ -6438,7 +6153,6 @@ void GLCanvas3D::_on_move()
         m_on_wipe_tower_moved_callback.call(wipe_tower_origin(0), wipe_tower_origin(1));
 }
 #else
-//##############################################################################################################################################
 void GLCanvas3D::_on_move(const std::vector<int>& volume_idxs)
 {
     if (m_model == nullptr)
@@ -6489,16 +6203,13 @@ void GLCanvas3D::_on_move(const std::vector<int>& volume_idxs)
     if (wipe_tower_origin != Vec3d::Zero())
         m_on_wipe_tower_moved_callback.call(wipe_tower_origin(0), wipe_tower_origin(1));
 }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 void GLCanvas3D::_on_select(int volume_idx, int object_idx)
 {
     int vol_id = -1;
     int obj_id = -1;
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     if ((volume_idx != -1) && (volume_idx < (int)m_volumes.volumes.size()))
     {
@@ -6514,7 +6225,6 @@ void GLCanvas3D::_on_select(int volume_idx, int object_idx)
         }
     }
 #else
-//##############################################################################################################################################
     if ((volume_idx != -1) && (volume_idx < (int)m_volumes.volumes.size()))
     {
         if (m_select_by == "volume")
@@ -6537,21 +6247,14 @@ void GLCanvas3D::_on_select(int volume_idx, int object_idx)
             vol_id = -1;
         }
     }
-//##############################################################################################################################################
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
     m_on_select_object_callback.call(obj_id, vol_id);
-//##############################################################################################################################################
 #if !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
     select_current_volume(obj_id, vol_id);
-//##############################################################################################################################################
 #endif // !ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 }
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void GLCanvas3D::_synchronize_instances()
 {
@@ -6664,7 +6367,6 @@ void GLCanvas3D::_on_gizmo_rotate_3D(const Vec3d& rotation)
 {
 }
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 std::vector<float> GLCanvas3D::_parse_colors(const std::vector<std::string>& colors)
 {

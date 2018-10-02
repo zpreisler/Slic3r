@@ -135,12 +135,10 @@ public:
     // Print object statistics to console.
     void print_info() const;
     
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
     bool has_parts() const { return volumes.size() > 1; }
     bool has_instances() const { return instances.size() > 1; }
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 private:        
     ModelObject(Model *model) : layer_height_profile_valid(false), m_model(model), origin_translation(Vec3d::Zero()), m_bounding_box_valid(false) {}

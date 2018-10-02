@@ -110,8 +110,10 @@
             if (idx > 0 && idx < int(THIS->volumes.size())) {
                 std::swap(THIS->volumes[idx-1], THIS->volumes[idx]);
                 std::swap(THIS->volumes[idx-1]->composite_id,    THIS->volumes[idx]->composite_id);
-//                std::swap(THIS->volumes[idx-1]->select_group_id, THIS->volumes[idx]->select_group_id);
-//                std::swap(THIS->volumes[idx-1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+#if !ENABLE_EXTENDED_SELECTION
+                std::swap(THIS->volumes[idx-1]->select_group_id, THIS->volumes[idx]->select_group_id);
+                std::swap(THIS->volumes[idx-1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+#endif // !ENABLE_EXTENDED_SELECTION
                 RETVAL = true;
             } else
                 RETVAL = false;
@@ -121,8 +123,10 @@
             if (idx >= 0 && idx + 1 < int(THIS->volumes.size())) {
                 std::swap(THIS->volumes[idx+1], THIS->volumes[idx]);
                 std::swap(THIS->volumes[idx+1]->composite_id,    THIS->volumes[idx]->composite_id);
-//                std::swap(THIS->volumes[idx+1]->select_group_id, THIS->volumes[idx]->select_group_id);
-//                std::swap(THIS->volumes[idx+1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+#if !ENABLE_EXTENDED_SELECTION
+                std::swap(THIS->volumes[idx+1]->select_group_id, THIS->volumes[idx]->select_group_id);
+                std::swap(THIS->volumes[idx+1]->drag_group_id,   THIS->volumes[idx]->drag_group_id);
+#endif // !ENABLE_EXTENDED_SELECTION
                 RETVAL = true;
             } else
                 RETVAL = false;

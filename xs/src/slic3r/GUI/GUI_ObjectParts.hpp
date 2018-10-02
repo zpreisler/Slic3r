@@ -15,12 +15,10 @@ class wxBitmap;
 namespace Slic3r {
 class ModelObject;
 class Model;
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 class GLVolume;
 typedef std::vector<GLVolume*> GLVolumePtrs;
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 
 namespace GUI {
 //class wxGLCanvas;
@@ -115,13 +113,11 @@ void on_btn_move_down();
 void parts_changed(int obj_idx);
 void part_selection_changed();
 
-//##############################################################################################################################################
 #if ENABLE_EXTENDED_SELECTION
 void reset_settings_value();
 void update_settings_value(const GLVolume& volume);
 void update_settings_value(const GLVolumePtrs& volumes);
 #endif // ENABLE_EXTENDED_SELECTION
-//##############################################################################################################################################
 void update_settings_value();
 // show/hide "Extruder" column for Objects List
 void set_extruder_column_hidden(bool hide);
