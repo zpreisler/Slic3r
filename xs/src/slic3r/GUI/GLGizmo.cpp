@@ -221,7 +221,7 @@ GLGizmoBase::GLGizmoBase(GLCanvas3D& parent)
     , m_accept_wipe_tower(false)
 #endif // ENABLE_EXTENDED_SELECTION
 //##############################################################################################################################################
-, m_hover_id(-1)
+    , m_hover_id(-1)
     , m_dragging(false)
 {
     ::memcpy((void*)m_base_color, (const void*)DEFAULT_BASE_COLOR, 3 * sizeof(float));

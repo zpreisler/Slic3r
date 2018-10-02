@@ -484,39 +484,64 @@ class GLCanvas3D
 #if ENABLE_EXTENDED_SELECTION
     class Selection
     {
-    public:
-        typedef std::vector<GLVolume*> VolumesList;
-        typedef std::vector<Vec3d> Cache;
+        struct VolumeCache
+        {
+            Vec3d position;
+            Vec3d rotation;
+            Vec3d scaling_factor;
+            Transform3d rotation_matrix;
+
+            VolumeCache(const Vec3d& position, const Vec3d& rotation, const Vec3d& scaling_factor);
+        };
+
+        typedef std::vector<VolumeCache> VolumesCache;
+
+        struct Cache
+        {
+            VolumesCache volumes_data;
+            Vec3d dragging_center;
+        };
 
     private:
-        VolumesList m_volumes;
-        Cache m_positions_cache;
-        Cache m_rotations_cache;
+        GLVolumePtrs m_volumes;
+        Cache m_cache;
+
+        mutable BoundingBoxf3 m_bounding_box;
+        mutable bool m_bounding_box_dirty;
 
     public:
+        Selection();
+
         void add(GLVolume* volume, bool as_single_selection = true);
         void remove(GLVolume* volume);
         void clear();
 
-        void update_caches();
+        void start_dragging();
 
         void set_scaling_factor(const Vec3d& scale);
 
         void translate(const Vec3d& displacement);
-        void rotate(const Vec3d& rotation, bool shift_down);
+        void rotate(const Vec3d& rotation, bool use_volume_space);
 
         unsigned int count() const { return (unsigned int)m_volumes.size(); }
         bool is_empty() const { return m_volumes.empty(); }
-        bool is_single() const { return m_volumes.size() == 1; }
-        bool contains_wipe_tower() const;
+        bool is_single_volume() const { return m_volumes.size() == 1; }
 
-        const VolumesList& get_volumes() const { return m_volumes; }
-        GLVolume* get_first_volume() { return is_empty() ? nullptr : m_volumes[0]; }
+        bool contains_volume(const GLVolume* volume) const;
+        bool contains_wipe_tower() const;
+        bool contains_full_instance(const Model& model, int object_idx, int instance_idx) const;
+
+        const GLVolumePtrs& get_volumes() const { return m_volumes; }
+        const GLVolume* get_first_volume() const { return is_empty() ? nullptr : m_volumes.front(); }
 
         int get_first_modelobject_id() const;
         int get_first_modelvolume_id() const;
 
-        BoundingBoxf3 bounding_box() const;
+        const BoundingBoxf3& get_bounding_box() const;
+
+    private:
+        void set_caches();
+        void calc_bounding_box() const;
     };
 #endif // ENABLE_EXTENDED_SELECTION
 //##############################################################################################################################################
@@ -595,7 +620,13 @@ class GLCanvas3D
     GCodePreviewVolumeIndex m_gcode_preview_volume_index;
 
     PerlCallback m_on_viewport_changed_callback;
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     PerlCallback m_on_double_click_callback;
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     PerlCallback m_on_right_click_callback;
     PerlCallback m_on_select_object_callback;
     PerlCallback m_on_model_update_callback;
@@ -742,7 +773,13 @@ public:
     void load_preview(const std::vector<std::string>& str_tool_colors);
 
     void register_on_viewport_changed_callback(void* callback);
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_on_double_click_callback(void* callback);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_on_right_click_callback(void* callback);
     void register_on_select_object_callback(void* callback);
     void register_on_model_update_callback(void* callback);
@@ -898,7 +935,15 @@ private:
     void _update_toolpath_volumes_outside_state();
     void _show_warning_texture_if_needed();
 
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    void _on_move();
+#else
+//##############################################################################################################################################
     void _on_move(const std::vector<int>& volume_idxs);
+//##############################################################################################################################################
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void _on_select(int volume_idx, int object_idx);
 
     // generates the legend texture in dependence of the current shown view type
@@ -911,6 +956,18 @@ private:
     bool _is_any_volume_outside() const;
 
     void _resize_toolbar() const;
+
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+    void _synchronize_instances();
+    void _select_instance(int volume_idx, bool as_single_selection = true);
+    void _unselect_instance(int volume_idx);
+    void _select_object(int volume_idx, bool as_single_selection = true);
+    void _unselect_object(int volume_idx);
+
+    void _on_gizmo_rotate_3D(const Vec3d& rotation);
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
     static std::vector<float> _parse_colors(const std::vector<std::string>& colors);
 };

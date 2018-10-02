@@ -2104,7 +2104,13 @@ void _3DScene::register_on_viewport_changed_callback(wxGLCanvas* canvas, void* c
 
 void _3DScene::register_on_double_click_callback(wxGLCanvas* canvas, void* callback)
 {
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     s_canvas_mgr.register_on_double_click_callback(canvas, callback);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 }
 
 void _3DScene::register_on_right_click_callback(wxGLCanvas* canvas, void* callback)

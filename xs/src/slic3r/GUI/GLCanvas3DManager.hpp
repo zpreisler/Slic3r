@@ -148,7 +148,13 @@ public:
     void reset_legend_texture();
 
     void register_on_viewport_changed_callback(wxGLCanvas* canvas, void* callback);
+//##############################################################################################################################################
+#if !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_on_double_click_callback(wxGLCanvas* canvas, void* callback);
+//##############################################################################################################################################
+#endif // !ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
     void register_on_right_click_callback(wxGLCanvas* canvas, void* callback);
     void register_on_select_object_callback(wxGLCanvas* canvas, void* callback);
     void register_on_model_update_callback(wxGLCanvas* canvas, void* callback);

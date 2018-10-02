@@ -6,6 +6,11 @@
 #include "wxExtensions.hpp"
 #include "LambdaObjectDialog.hpp"
 #include "../../libslic3r/Utils.hpp"
+//##############################################################################################################################################
+#if ENABLE_EXTENDED_SELECTION
+#include "3DScene.hpp"
+#endif // ENABLE_EXTENDED_SELECTION
+//##############################################################################################################################################
 
 #include <wx/msgdlg.h>
 #include <boost/filesystem.hpp>
@@ -1579,6 +1584,42 @@ void reset_settings_value()
     og->set_value("rotation_y", 0);
     og->set_value("rotation_z", 0);
     og->disable();
+}
+
+void update_settings_value(const GLVolume& volume)
+{
+    auto og = get_optgroup(ogFrequentlyObjectSettings);
+    const Vec3d& position = volume.get_offset();
+    og->set_value("position_x", int(position(0)));
+    og->set_value("position_y", int(position(1)));
+    og->set_value("position_z", int(position(2)));
+    const Vec3d& scale = volume.get_scaling_factor();
+    if (g_is_percent_scale)
+    {
+        og->set_value("scale_x", int(scale(0) * 100));
+        og->set_value("scale_y", int(scale(1) * 100));
+        og->set_value("scale_z", int(scale(2) * 100));
+    }
+    else
+    {
+        Vec3d bb_size = volume.bounding_box.size();
+        og->set_value("scale_x", int(bb_size(0) + 0.5));
+        og->set_value("scale_y", int(bb_size(1) + 0.5));
+        og->set_value("scale_z", int(bb_size(2) + 0.5));
+    }
+    const Vec3d& rotation = volume.get_rotation();
+    og->set_value("rotation_x", int(Geometry::rad2deg(rotation(0))));
+    og->set_value("rotation_y", int(Geometry::rad2deg(rotation(1))));
+    og->set_value("rotation_z", int(Geometry::rad2deg(rotation(2))));
+    og->enable();
+}
+
+void update_settings_value(const GLVolumePtrs& volumes)
+{
+    if (volumes.size() == 1)
+        update_settings_value(*volumes.front());
+    else
+        reset_settings_value();
 }
 #endif // ENABLE_EXTENDED_SELECTION
 //##############################################################################################################################################
