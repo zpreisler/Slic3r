@@ -471,6 +471,15 @@ class GLCanvas3D
 #if ENABLE_EXTENDED_SELECTION
     class Selection
     {
+        enum EState : unsigned short
+        {
+            Mixed             = 0x0000,
+            Empty             = 0x0001,
+            SingleVolume      = 0x0002,
+            SingleInstance    = 0x0004,
+            SingleObjectParts = 0x0008
+        };
+
         struct VolumeCache
         {
             Vec3d position;
@@ -490,14 +499,18 @@ class GLCanvas3D
         };
 
     private:
+        unsigned short m_state;
         GLVolumePtrs m_volumes;
         Cache m_cache;
+        Model* m_model;
 
         mutable BoundingBoxf3 m_bounding_box;
         mutable bool m_bounding_box_dirty;
 
     public:
         Selection();
+
+        void set_model(Model* model) { m_model = model; }
 
         void add(GLVolume* volume, bool as_single_selection = true);
         void remove(GLVolume* volume);
@@ -508,15 +521,18 @@ class GLCanvas3D
         void set_scaling_factor(const Vec3d& scale);
 
         void translate(const Vec3d& displacement);
-        void rotate(const Vec3d& rotation, bool use_volume_space);
+        void rotate(const Vec3d& rotation, bool in_volume_space);
 
         unsigned int count() const { return (unsigned int)m_volumes.size(); }
-        bool is_empty() const { return m_volumes.empty(); }
-        bool is_single_volume() const { return m_volumes.size() == 1; }
+        bool is_empty() const { return m_state == Empty; }
+
+        bool is_single_volume() const { return (m_state & SingleVolume) == SingleVolume; }
+        bool is_single_instance() const { return (m_state & SingleInstance) == SingleInstance; }
+        bool is_single_object_parts() const { return (m_state & SingleObjectParts) == SingleObjectParts; }
 
         bool contains_volume(const GLVolume* volume) const;
         bool contains_wipe_tower() const;
-        bool contains_full_instance(const Model& model, int object_idx, int instance_idx) const;
+        bool contains_full_instance(int object_idx, int instance_idx) const;
 
         const GLVolumePtrs& get_volumes() const { return m_volumes; }
         const GLVolume* get_first_volume() const { return is_empty() ? nullptr : m_volumes.front(); }
@@ -527,8 +543,12 @@ class GLCanvas3D
         const BoundingBoxf3& get_bounding_box() const;
 
     private:
-        void set_caches();
-        void calc_bounding_box() const;
+        void _update_state();
+        bool _is_single_instance() const;
+        bool _is_single_object_parts() const;
+        void _set_caches();
+        void _rotate_as_a_whole(const Vec3d& rotation);
+        void _calc_bounding_box() const;
     };
 #endif // ENABLE_EXTENDED_SELECTION
 
@@ -901,6 +921,8 @@ private:
     void _unselect_instance(int volume_idx);
     void _select_object(int volume_idx, bool as_single_selection = true);
     void _unselect_object(int volume_idx);
+    void _select_in_all_instances(int volume_idx, bool as_single_selection = true);
+    void _unselect_in_all_instances(int volume_idx);
 
     void _on_gizmo_rotate_3D(const Vec3d& rotation);
 #endif // ENABLE_EXTENDED_SELECTION
