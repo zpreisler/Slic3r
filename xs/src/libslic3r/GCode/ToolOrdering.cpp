@@ -356,7 +356,7 @@ void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, coordf_
         // We should also check that the next wipe tower layer is no further than max_layer_height:
         unsigned int j = i+1;
         float last_wipe_tower_print_z = lt_next.print_z;
-        while (++j < m_layer_tools.size() && !m_layer_tools[j].has_wipe_tower)
+        while (++j < m_layer_tools.size()-1 && !m_layer_tools[j].has_wipe_tower)
             if (m_layer_tools[j+1].print_z - last_wipe_tower_print_z > max_layer_height) {
                 m_layer_tools[j].has_wipe_tower = true;
                 last_wipe_tower_print_z = m_layer_tools[j].print_z;
