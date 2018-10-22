@@ -292,7 +292,7 @@ void BedShapePanel::update_shape()
 void BedShapePanel::load_stl()
 {
 	auto dialog = new wxFileDialog(this, _(L("Choose a file to import bed shape from (STL/OBJ/AMF/3MF/PRUSA):")), "", "",
-		get_model_wildcard(), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+		MODEL_WILDCARD, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (dialog->ShowModal() != wxID_OK) {
 		dialog->Destroy();
 		return;

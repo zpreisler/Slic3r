@@ -1,16 +1,19 @@
 #ifndef slic3r_GUI_hpp_
 #define slic3r_GUI_hpp_
 
-#include <string>
-#include <vector>
 #include "PrintConfig.hpp"
 #include "../../libslic3r/Utils.hpp"
 #include "GUI_ObjectParts.hpp"
 
-#include <wx/app.h>
+// #include <wx/app.h>
 #include <wx/intl.h>
 #include <wx/string.h>
 
+#include <string>
+#include <stack>
+#include <mutex>
+
+class wxApp;
 class wxWindow;
 class wxFrame;
 class wxMenuBar;
@@ -27,6 +30,8 @@ class wxFileDialog;
 class wxStaticBitmap;
 class wxFont;
 class wxMenuItem;
+class wxTopLevelWindow;
+class wxCommandEvent;
 
 namespace Slic3r { 
 
@@ -66,24 +71,24 @@ class Tab;
 class ConfigOptionsGroup;
 class MainFrame;
 // Map from an file_type name to full file wildcard name.
-typedef std::map<std::string, std::string> t_file_wild_card;
-inline t_file_wild_card& get_file_wild_card() {
-	static t_file_wild_card FILE_WILDCARDS;
-	if (FILE_WILDCARDS.empty()){
-		FILE_WILDCARDS["known"]	= "Known files (*.stl, *.obj, *.amf, *.xml, *.prusa)|*.stl;*.STL;*.obj;*.OBJ;*.amf;*.AMF;*.xml;*.XML;*.prusa;*.PRUSA";
-		FILE_WILDCARDS["stl"]	= "STL files (*.stl)|*.stl;*.STL";
-		FILE_WILDCARDS["obj"]	= "OBJ files (*.obj)|*.obj;*.OBJ";
-        FILE_WILDCARDS["amf"]	= "AMF files (*.amf)|*.zip.amf;*.amf;*.AMF;*.xml;*.XML";
-        FILE_WILDCARDS["3mf"]	= "3MF files (*.3mf)|*.3mf;*.3MF;";
-        FILE_WILDCARDS["prusa"]	= "Prusa Control files (*.prusa)|*.prusa;*.PRUSA";
-		FILE_WILDCARDS["ini"]	= "INI files *.ini|*.ini;*.INI";
-		FILE_WILDCARDS["gcode"] = "G-code files (*.gcode, *.gco, *.g, *.ngc)|*.gcode;*.GCODE;*.gco;*.GCO;*.g;*.G;*.ngc;*.NGC";
-		FILE_WILDCARDS["svg"]	= "SVG files *.svg|*.svg;*.SVG";
-	}
-	return FILE_WILDCARDS;
-}
+const std::map<const std::string, const std::string> FILE_WILDCARDS {
+    std::make_pair("known", "Known files (*.stl, *.obj, *.amf, *.xml, *.prusa)|*.stl;*.STL;*.obj;*.OBJ;*.amf;*.AMF;*.xml;*.XML;*.prusa;*.PRUSA"),
+    std::make_pair("stl",   "STL files (*.stl)|*.stl;*.STL"),
+    std::make_pair("obj",   "OBJ files (*.obj)|*.obj;*.OBJ"),
+    std::make_pair("amf",   "AMF files (*.amf)|*.zip.amf;*.amf;*.AMF;*.xml;*.XML"),
+    std::make_pair("3mf",   "3MF files (*.3mf)|*.3mf;*.3MF;"),
+    std::make_pair("prusa", "Prusa Control files (*.prusa)|*.prusa;*.PRUSA"),
+    std::make_pair("ini",   "INI files *.ini|*.ini;*.INI"),
+    std::make_pair("gcode", "G-code files (*.gcode, *.gco, *.g, *.ngc)|*.gcode;*.GCODE;*.gco;*.GCO;*.g;*.G;*.ngc;*.NGC"),
+    std::make_pair("svg",   "SVG files *.svg|*.svg;*.SVG")
+};
 
-wxString get_model_wildcard();
+const std::string MODEL_WILDCARD{   FILE_WILDCARDS.at("known") + std::string("|") + 
+                                    FILE_WILDCARDS.at("stl") + std::string("|") + 
+                                    FILE_WILDCARDS.at("obj") + std::string("|") + 
+                                    FILE_WILDCARDS.at("amf") + std::string("|") + 
+                                    FILE_WILDCARDS.at("3mf") + std::string("|") +
+                                    FILE_WILDCARDS.at("prusa") };
 
 struct PresetTab {
     std::string       name;
@@ -214,8 +219,6 @@ void set_model_events_from_perl(Model &model,
 							    int event_remove_object, 
 							    int event_update_scene);
 void add_frequently_changed_parameters(wxWindow* parent, wxBoxSizer* sizer, wxFlexGridSizer* preset_sizer);
-// Update view mode according to selected menu 
-void update_mode();
 bool is_expert_mode();
 
 // Callback to trigger a configuration update timer on the Plater.
@@ -243,18 +246,24 @@ extern void desktop_open_datadir_folder();
 // -------------------------------------------------------------------
 // GUI
 // -------------------------------------------------------------------
-class GUI : public wxApp
+class GUI_App/* : public wxApp*/
 {
     // Datadir provided on the command line.
-    std::string datadir = "";
-    // If set, the "Controller" tab for the control of the printer over serial line and the serial port settings are hidden.
-    bool no_plater = true;
-    std::vector< std::function<void()> >    m_cb; // #ys_FIXME
+    std::string     datadir = "";
+    bool            no_plater {true};
+    bool            app_conf_exists {false};
 
-    int VERSION_ONLINE_EVENT = wxNewEventType();
-    bool        app_conf_exists = false;
+    // Lock to guard the callback stack
+    std::mutex      callback_register;
+    // callbacks registered to run during idle event.
+    std::stack<std::function<void()>>    m_cb {};
+
+//     int VERSION_ONLINE_EVENT = wxNewEventType(); // #ys_FIXME
+
 public:
-    virtual bool    OnInit() override;
+    bool            OnInit() /*override*/;
+//     GUI_App() : wxApp() {}
+
     void            recreate_GUI();
     void            system_info();
     static bool     catch_error(std::function<void()> cb,
@@ -270,22 +279,22 @@ public:
                                     const wxString& description,
                                     const std::string& icon,
                                     std::function<void(wxCommandEvent& event)> cb,
-                                    int kind = 0);
+                                    wxItemKind kind = wxITEM_NORMAL);
     wxMenuItem*     append_submenu(wxMenu* menu,
                                     wxMenu* sub_menu,
                                     int id,
                                     const wxString& string,
                                     const wxString& description,
                                     const std::string& icon);
-    void            save_window_pos(wxFrame* window, const std::string& name);
-    void            restore_window_pos(wxFrame* window, const std::string& name);
+    void            save_window_pos(wxTopLevelWindow* window, const std::string& name);
+    void            restore_window_pos(wxTopLevelWindow* window, const std::string& name);
 
-    AppConfig*      app_config = nullptr;
-    PresetBundle*   preset_bundle = nullptr;
-    PresetUpdater*  preset_updater = nullptr;
-    MainFrame*      mainframe = nullptr;
+    AppConfig*      app_config {nullptr};
+    PresetBundle*   preset_bundle {nullptr};
+    PresetUpdater*  preset_updater {nullptr};
+    MainFrame*      mainframe {nullptr};
 };
-DECLARE_APP(GUI)
+// DECLARE_APP(GUI_App)
 
 } // namespace GUI
 } // namespace Slic3r

@@ -24,7 +24,7 @@
 #include "boost/nowide/convert.hpp"
 #endif
 
-//#include <wx/app.h>
+#include <wx/app.h>
 #include <wx/stdpaths.h>
 #include <wx/button.h>
 #include <wx/dir.h>
@@ -72,16 +72,6 @@ namespace Slic3r { namespace GUI {
 #if __APPLE__
 IOPMAssertionID assertionID;
 #endif
-
-wxString get_model_wildcard()
-{
-    t_file_wild_card vec_FILE_WILDCARDS = get_file_wild_card();
-    std::vector<std::string> file_types = { "known", "stl", "obj", "amf", "3mf", "prusa" };
-    wxString MODEL_WILDCARD;
-    for (auto file_type : file_types)
-        MODEL_WILDCARD += vec_FILE_WILDCARDS.at(file_type) + "|";
-    return MODEL_WILDCARD;
-}
 
 void disable_screensaver()
 {
@@ -536,10 +526,10 @@ void add_menus(wxMenuBar *menu, int event_preferences_changed, int event_languag
 }
 
 void open_model(wxWindow *parent, wxArrayString& input_files){
-	auto dlg_title = _(L("Choose one or more files (STL/OBJ/AMF/3MF/PRUSA):"));
-	auto dialog = new wxFileDialog(parent /*? parent : GetTopWindow(g_wxMainFrame)*/, dlg_title, 
+	auto dialog = new wxFileDialog(parent /*? parent : GetTopWindow()*/, 
+        _(L("Choose one or more files (STL/OBJ/AMF/3MF/PRUSA):")),
 		g_AppConfig->get_last_dir(), "",
-		get_model_wildcard(), wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
+		MODEL_WILDCARD, wxFD_OPEN | wxFD_MULTIPLE | wxFD_FILE_MUST_EXIST);
 	if (dialog->ShowModal() != wxID_OK) {
 		dialog->Destroy();
 		return ;
@@ -1329,11 +1319,12 @@ void desktop_open_datadir_folder()
 // -------------------------------------------------------------------
 // GUI
 // -------------------------------------------------------------------
-IMPLEMENT_APP(GUI)
-bool GUI::OnInit()
+// IMPLEMENT_APP(GUI_App)
+bool GUI_App::OnInit()
 {
-    SetAppName("Slic3rP");
-    SetAppDisplayName("Slic3r Prusa Edition");
+//     SetAppName("Slic3rPE");
+//     SetAppDisplayName("Slic3r Prusa Edition");
+
 //     Slic3r::debugf "wxWidgets version %s, Wx version %s\n", &Wx::wxVERSION_STRING, $Wx::VERSION;
 // 
     // Set the Slic3r data directory at the Slic3r XS module.
@@ -1365,7 +1356,7 @@ bool GUI::OnInit()
 //     app_config->set("version", Slic3r::VERSION);
     app_config->save();
 
-    preset_updater = new PresetUpdater(VERSION_ONLINE_EVENT);
+    preset_updater;// = new PresetUpdater(VERSION_ONLINE_EVENT);
 //     set_preset_updater(preset_updater); // #ys_FIXME
 
     Slic3r::GUI::load_language();
@@ -1385,15 +1376,35 @@ bool GUI::OnInit()
 //     wxImage::FindHandlerType(wxBITMAP_TYPE_PNG) ||
     wxImage::AddHandler(new wxPNGHandler());
     mainframe = new Slic3r::GUI::MainFrame(no_plater, false);
-    SetTopWindow(mainframe);
+//     SetTopWindow(mainframe);
 
     // This makes CallAfter() work
-    mainframe->Bind(wxEVT_IDLE, [this](wxEvent& event){
-        for (auto cb: m_cb)
-            cb(); // #ys_FIXME
+//     /*mainframe->*/Bind(wxEVT_IDLE, 
+                         [this](wxIdleEvent& event)
+    {
+        std::function<void()> cur_cb{ nullptr };
+        // try to get the mutex. If we can't, just skip this idle event and get the next one.
+        if (!callback_register.try_lock()) return;
+        // pop callback
+        if (m_cb.size() != 0){
+            cur_cb = m_cb.top();
+            m_cb.pop();
+        }
+        // unlock mutex
+        this->callback_register.unlock();
+
+        try { // call the function if it's not nullptr;
+            if (cur_cb != nullptr) cur_cb();
+        }
+        catch (std::exception& e) {
+//             Slic3r::Log::error(LogChannel, LOG_WSTRING("Exception thrown: " << e.what())); // #ys_FIXME
+        }
+
         if (app_config->dirty())
             app_config->save();
-    });
+    }
+                         ;// #ys_FIXME
+//     );
 
     // On OS X the UI tends to freeze in weird ways if modal dialogs(config wizard, update notifications, ...)
     // are shown before or in the same event callback with the main frame creation.
@@ -1442,24 +1453,27 @@ bool GUI::OnInit()
     return true;
 }
 
-void GUI::recreate_GUI()
+void GUI_App::recreate_GUI()
 {
 //     print STDERR "recreate_GUI\n";
-    auto topwindow = GetTopWindow();
-    mainframe = new Slic3r::GUI::MainFrame(no_plater,false);
 
-    if (topwindow) {
-        SetTopWindow(mainframe);
-        topwindow->Destroy();
-    }
 
+//     auto topwindow = GetTopWindow();
+//     mainframe = new Slic3r::GUI::MainFrame(no_plater,false);
+// 
+//     if (topwindow) {
+//         SetTopWindow(mainframe);
+//         topwindow->Destroy();
+//     }
+
+    //! Do we need this now??  // #ys_FIXME
     // This makes CallAfter() work
-    mainframe->Bind(wxEVT_IDLE, [this](wxEvent& event){
-        for (auto cb : m_cb)
-            cb(); // #ys_FIXME
-        if (app_config->dirty())
-            app_config->save();
-    });
+//     mainframe->Bind(wxEVT_IDLE, [this](wxEvent& event){
+//         for (auto cb : m_cb)
+//             cb(); 
+//         if (app_config->dirty())
+//             app_config->save();
+//     });
 
 
     // On OSX the UI was not initialized correctly if the wizard was called
@@ -1470,12 +1484,12 @@ void GUI::recreate_GUI()
     });
 }
 
-void GUI::system_info()
+void GUI_App::system_info()
 {
 //     auto slic3r_info = Slic3r::slic3r_info(format = > 'html');
 //     auto copyright_info = Slic3r::copyright_info(format = > 'html');
 //     auto system_info = Slic3r::system_info(format = > 'html');
-    std::string opengl_info;
+    std::string opengl_info = "";
     std::string opengl_info_txt = "";
     if (mainframe && mainframe->m_plater /*&& mainframe->m_plater->canvas3D*/) {
         opengl_info = _3DScene::get_gl_info(true, true);
@@ -1489,7 +1503,7 @@ void GUI::system_info()
 }
 
 // static method accepting a wxWindow object as first parameter
-bool GUI::catch_error(std::function<void()> cb, 
+bool GUI_App::catch_error(std::function<void()> cb,
 //                       wxMessageDialog* message_dialog,
                       const std::string& err /*= ""*/){
     if (!err.empty()) {
@@ -1523,7 +1537,7 @@ void fatal_error(wxWindow* parent){
 // }
 
     // Do we need this function???
-// void GUI::notify(message){
+// void GUI_App::notify(message){
 //     auto frame = GetTopWindow();
 //     // try harder to attract user attention on OS X
 //     if (!frame->IsActive())
@@ -1536,7 +1550,7 @@ void fatal_error(wxWindow* parent){
 
 // Called after the Preferences dialog is closed and the program settings are saved.
 // Update the UI based on the current preferences.
-void GUI::update_ui_from_settings(){
+void GUI_App::update_ui_from_settings(){
     mainframe->update_ui_from_settings();
 }
 
@@ -1555,17 +1569,23 @@ void GUI::update_ui_from_settings(){
 //     return input_files;
 // }
 
-void GUI::CallAfter(std::function<void()> cb){
-    m_cb.push_back(cb);
+void GUI_App::CallAfter(std::function<void()> cb)
+{
+    // set mutex
+    callback_register.lock();
+    // push function onto stack
+    m_cb.emplace(cb);
+    // unset mutex
+    callback_register.unlock();
 }
 
-wxMenuItem* GUI::append_menu_item(wxMenu* menu,
+wxMenuItem* GUI_App::append_menu_item(wxMenu* menu,
                         int id,
                         const wxString& string, 
                         const wxString& description,
                         const std::string& icon,
                         std::function<void(wxCommandEvent& event)> cb,
-                        int kind/* = 0*/)
+                        wxItemKind kind/* = wxITEM_NORMAL*/)
 {
     if (id == wxID_ANY)
         id = wxNewId();
@@ -1578,7 +1598,7 @@ wxMenuItem* GUI::append_menu_item(wxMenu* menu,
     return item;
 }
 
-wxMenuItem* GUI::append_submenu(wxMenu* menu,
+wxMenuItem* GUI_App::append_submenu(wxMenu* menu,
                                 wxMenu* sub_menu,
                                 int id,
                                 const wxString& string,
@@ -1596,7 +1616,7 @@ wxMenuItem* GUI::append_submenu(wxMenu* menu,
     return item;
 }
 
-void GUI::save_window_pos(wxFrame* window, const std::string& name){
+void GUI_App::save_window_pos(wxTopLevelWindow* window, const std::string& name){
     int x, y;
     window->GetScreenPosition(&x, &y);
     app_config->set(name + "_pos", wxString::Format("%d,%d", x, y).ToStdString());
@@ -1609,7 +1629,7 @@ void GUI::save_window_pos(wxFrame* window, const std::string& name){
     app_config->save();
 }
 
-void GUI::restore_window_pos(wxFrame* window, const std::string& name){
+void GUI_App::restore_window_pos(wxTopLevelWindow* window, const std::string& name){
     if (!app_config->has(name + "_pos"))
         return;
 
