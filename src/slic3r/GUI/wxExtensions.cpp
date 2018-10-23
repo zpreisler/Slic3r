@@ -1299,6 +1299,14 @@ double PrusaDoubleSlider::get_double_value(const SelectedSlider& selection) cons
     return m_values[selection == ssLower ? m_lower_value : m_higher_value].second;
 }
 
+void PrusaDoubleSlider::get_ticks_values(std::set<double>& values)
+{
+    if (m_values.empty()) return;
+
+    for (auto tick : m_ticks)
+        values.insert(m_values[tick].second);
+}
+
 void PrusaDoubleSlider::get_lower_and_higher_position(int& lower_pos, int& higher_pos)
 {
     const double step = get_scroll_step();
