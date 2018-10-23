@@ -679,6 +679,7 @@ protected:
     wxSize      get_size();
     void        get_size(int *w, int *h);
     double      get_double_value(const SelectedSlider& selection) const;
+    void        get_ticks_values(std::set<double>& values);
 
 private:
     int         m_min_value;
