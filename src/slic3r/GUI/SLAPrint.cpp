@@ -7,7 +7,8 @@
 
 namespace Slic3r {
 
-const std::string SLAPrint::m_stage_labels[] = {
+const std::array<std::string, SLAPrint::NUM_STAGES> SLAPrint::m_stage_labels =
+{
     "", // IDLE,
     L("Finding best rotation"), // FIND_ROTATION,
     L("Scanning model structure"), // SUPPORT_POINTS,
@@ -20,8 +21,76 @@ const std::string SLAPrint::m_stage_labels[] = {
     L("SLA print preparation aborted")  // ABORT,
 };
 
+const std::array<unsigned, SLAPrint::NUM_STAGES> SLAPrint::m_stage_levels =
+{
+    0,      // IDLE,
+    10,     // FIND_ROTATION,
+    20,     // SUPPORT_POINTS,
+    30,     // SUPPORT_TREE,
+    40,     // BASE_POOL,
+    50,     // SLICE_MODEL,
+    60,     // SLICE_SUPPORTS,
+    70,     // EXPORT,
+    100,    // DONE,
+    0       // ABORT,
+};
+
+
 void SLAPrint::_start()
 {
+
+    auto find_rotation = []() {
+
+    };
+
+    auto support_points = []() {
+        // This may not be part of the printing pipeline
+    };
+
+    auto support_tree = []() {
+
+    };
+
+    auto base_pool = []() {
+
+    };
+
+    auto slice_model = []() {
+
+    };
+
+    auto slice_supports = []() {
+
+    };
+
+    auto rasterize = []() {
+
+    };
+
+    std::array<std::function<void()>, NUM_STAGES> program =
+    {
+        []() {}, // idle: do nothing (or maybe some clearing)
+        find_rotation,
+        support_points,
+        support_tree,
+        base_pool,
+        slice_model,
+        slice_supports,
+        rasterize,
+        [](){}, // done..
+        [](){}  // abort
+    };
+
+    while(m_stage < DONE && m_stage != ABORT && !m_process->is_canceled()) {
+        // progress
+        m_stage = static_cast<Stages>(m_stage + 1);
+        if(m_stagemask[m_stage]) {
+            m_process->status(m_stage_levels[m_stage], m_stage_labels[m_stage]);
+            program[m_stage]();
+        }
+    }
+
+    /* if(m_stage == ABORT) throw something; */
 }
 
 void SLAPrint::_synch() {

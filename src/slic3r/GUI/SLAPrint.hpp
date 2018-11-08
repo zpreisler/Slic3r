@@ -12,7 +12,6 @@ namespace Slic3r {
 class Model;
 class ModelObject;
 class ModelInstance;
-class GLCanvas3D;
 class DynamicPrintConfig;
 
 // This will be the driver to create background threads. Possibly
@@ -84,6 +83,20 @@ public:
         // ...
     };
 
+    enum Stages {
+        IDLE,
+        FIND_ROTATION,
+        SUPPORT_POINTS,
+        SUPPORT_TREE,
+        BASE_POOL,
+        SLICE_MODEL,
+        SLICE_SUPPORTS,
+        RASTERIZE,
+        DONE,
+        ABORT,
+        NUM_STAGES
+    };
+
 private:
 
     // Caching instance transformations and slices
@@ -122,21 +135,11 @@ private:
     // For now it will just stop the whole process and invalidate everything
     std::atomic<bool> m_dirty;
 
-    enum Stages {
-        IDLE,
-        FIND_ROTATION,
-        SUPPORT_POINTS,
-        SUPPORT_TREE,
-        BASE_POOL,
-        SLICE_MODEL,
-        SLICE_SUPPORTS,
-        EXPORT,
-        DONE,
-        ABORT,
-        NUM_STAGES
-    };
+    static const std::array<std::string, NUM_STAGES> m_stage_labels;
+    static const std::array<unsigned, NUM_STAGES>    m_stage_levels;
 
-    static const std::string m_stage_labels[NUM_STAGES];
+    std::vector<bool> m_stagemask;
+    Stages m_stage;
 
     void _start();
     void _synch();
@@ -156,8 +159,13 @@ public:
              std::function<SLAPrint::GlobalConfig(void)> cfgreader =
                     [](){ return SLAPrint::GlobalConfig(); },
              std::shared_ptr<BackgroundProcess> scheduler = {}):
-        m_model(model), m_config_reader(cfgreader)
+
+        m_model(model),
+        m_config_reader(cfgreader),
+        m_stagemask(NUM_STAGES, true),
+        m_stage(IDLE)
     {
+        m_dirty.store(false);
         set_scheduler(scheduler);
     }
 
@@ -178,6 +186,14 @@ public:
     // (I know, we will use zipped PNG, but everything changes here so quickly)
     bool export_layers(const std::string& filepath,
                        CallType calltype = BLOCKING);
+
+    void enable_stages(std::vector<Stages> stages) {
+        for(auto s : stages) m_stagemask[s] = true;
+    }
+
+    void disable_stages(std::vector<Stages> stages) {
+        for(auto s : stages) m_stagemask[s] = false;
+    }
 };
 
 }

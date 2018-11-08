@@ -56,7 +56,7 @@ protected:
     GLCanvas3D& m_parent;
 
     int m_group_id;
-    EState m_state, m_prev_state;
+    EState m_state, m_onoff;
     // textures are assumed to be square and all with the same size in pixels, no internal check is done
     GLTexture m_textures[Num_States];
     int m_hover_id;
@@ -79,10 +79,13 @@ public:
 
     EState get_state() const { return m_state; }
     void set_state(EState state) {
-        bool call_deactivate =
-                m_prev_state == On && state == Off && m_state == Hover;
+        bool call_deactivate = false;
 
-        if(state == On || state == Off) m_prev_state = state;
+        if(m_state == Hover && state == On) m_onoff = On;
+        if(m_state == Hover && state == Off) {
+            if(m_onoff == On) call_deactivate = true;
+            m_onoff = Off;
+        }
 
         m_state = state; on_set_state();
 
