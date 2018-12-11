@@ -985,7 +985,10 @@ public:
     void viewport_changed();
 #endif // ENABLE_CONSTRAINED_CAMERA_TARGET
 
-    void handle_sidebar_focus_event(const std::string& opt_key) {}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    void handle_sidebar_focus_event(const std::string& opt_key, bool focus_on);
+//    void handle_sidebar_focus_event(const std::string& opt_key) {}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 private:
     bool _is_shown_on_screen() const;
