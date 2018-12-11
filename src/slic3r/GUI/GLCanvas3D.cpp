@@ -628,7 +628,10 @@ void GLCanvas3D::Axes::render(bool depth_test) const
     else
         ::glDisable(GL_DEPTH_TEST);
 
-    ::glLineWidth(2.0f);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    ::glLineWidth(3.0f);
+//    ::glLineWidth(2.0f);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     ::glBegin(GL_LINES);
     // draw line for x axis
     ::glColor3f(1.0f, 0.0f, 0.0f);
@@ -1131,7 +1134,20 @@ GLCanvas3D::Selection::Selection()
     , m_valid(false)
     , m_bounding_box_dirty(true)
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_quadric = ::gluNewQuadric();
+    if (m_quadric != nullptr)
+        ::gluQuadricDrawStyle(m_quadric, GLU_FILL);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+GLCanvas3D::Selection::~Selection()
+{
+    if (m_quadric != nullptr)
+        ::gluDeleteQuadric(m_quadric);
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::Selection::set_volumes(GLVolumePtrs* volumes)
 {
@@ -1537,7 +1553,7 @@ void GLCanvas3D::Selection::rotate(const Vec3d& rotation, bool local)
             const Transform3d& inst_m = m_cache.volumes_data[i].get_instance_rotation_matrix();
             Vec3d new_rotation = Geometry::extract_euler_angles(inst_m.inverse() * m * inst_m * m_cache.volumes_data[i].get_volume_rotation_matrix());
             (*m_volumes)[i]->set_volume_rotation(new_rotation);
-    }
+        }
 #else
             (*m_volumes)[i]->set_volume_rotation(rotation);
 #endif // ENABLE_WORLD_ROTATIONS
@@ -1958,13 +1974,38 @@ void GLCanvas3D::Selection::erase()
 
 void GLCanvas3D::Selection::render() const
 {
-    if (is_empty())
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if (!m_valid || is_empty())
+//    if (is_empty())
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         return;
 
     // render cumulative bounding box of selected volumes
     _render_selected_volumes();
     _render_synchronized_volumes();
 }
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::Selection::render_center() const
+{
+    if (!m_valid || is_empty())
+        return;
+
+    const Vec3d& center = get_bounding_box().center();
+
+    ::glDisable(GL_DEPTH_TEST);
+
+    ::glEnable(GL_LIGHTING);
+
+    ::glColor3f(1.0f, 1.0f, 1.0f);
+    ::glPushMatrix();
+    ::glTranslated(center(0), center(1), center(2));
+    ::gluSphere(m_quadric, 1.0, 32, 32);
+    ::glPopMatrix();
+
+    ::glDisable(GL_LIGHTING);
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::Selection::_update_valid()
 {
@@ -3645,7 +3686,10 @@ void GLCanvas3D::set_bed_shape(const Pointfs& shape)
 
     // Set the origin and size for painting of the coordinate system axes.
     m_axes.origin = Vec3d(0.0, 0.0, (double)GROUND_Z);
-    set_axes_length(0.3f * (float)m_bed.get_bounding_box().max_size());
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    set_axes_length(0.15f * (float)m_bed.get_bounding_box().max_size());
+//    set_axes_length(0.3f * (float)m_bed.get_bounding_box().max_size());
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     if (new_shape)
         zoom_to_bed();
@@ -3935,6 +3979,10 @@ void GLCanvas3D::render()
     // could be invalidated by the following gizmo render methods
     // this position is used later into on_mouse() to drag the objects
     m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    _render_selection_extensions();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     _render_current_gizmo();
 #if ENABLE_SHOW_CAMERA_TARGET
@@ -6056,9 +6104,12 @@ void GLCanvas3D::_render_camera_target() const
     ::glColor3f(0.0f, 1.0f, 0.0f);
     ::glVertex3d(target(0), target(1) - half_length, target(2));
     ::glVertex3d(target(0), target(1) + half_length, target(2));
-    ::glEnd();
-
-    ::glBegin(GL_LINES);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // draw line for z axis
+//    ::glEnd();
+//
+//    ::glBegin(GL_LINES);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     ::glColor3f(0.0f, 0.0f, 1.0f);
     ::glVertex3d(target(0), target(1), target(2) - half_length);
     ::glVertex3d(target(0), target(1), target(2) + half_length);
@@ -6276,6 +6327,13 @@ void GLCanvas3D::_render_sla_slices() const
         }
     }
 }
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::_render_selection_extensions() const
+{
+    m_selection.render_center();
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::_update_volumes_hover_state() const
 {

@@ -194,6 +194,7 @@ void OptionsGroup::append_line(const Line& line, wxStaticText**	full_Label/* = n
 
 	if (full_Label != nullptr) 
         *full_Label = label; // Initiate the pointer to the control of the full label, if we need this one.
+
     // If there's a widget, build it and add the result to the sizer.
 	if (line.widget != nullptr) {
 		auto wgt = line.widget(parent());
@@ -205,8 +206,8 @@ void OptionsGroup::append_line(const Line& line, wxStaticText**	full_Label/* = n
 	// If we're here, we have more than one option or a single option with sidetext
     // so we need a horizontal sizer to arrange these things
 	auto sizer = new wxBoxSizer(wxHORIZONTAL);
-	grid_sizer->Add(sizer, 0, wxEXPAND | (staticbox ? wxALL : wxBOTTOM | wxTOP | wxLEFT), staticbox ? 0 : 1);
-	// If we have a single option with no sidetext just add it directly to the grid sizer
+    grid_sizer->Add(sizer, 0, wxEXPAND | (staticbox ? wxALL : wxBOTTOM | wxTOP | wxLEFT), staticbox ? 0 : 1);
+    // If we have a single option with no sidetext just add it directly to the grid sizer
 	if (option_set.size() == 1 && option_set.front().opt.sidetext.size() == 0 &&
 		option_set.front().side_widget == nullptr && line.get_extra_widgets().size() == 0) {
 		const auto& option = option_set.front();
@@ -231,10 +232,10 @@ void OptionsGroup::append_line(const Line& line, wxStaticText**	full_Label/* = n
 // 			wxString str_label = (option.label == "Top" || option.label == "Bottom") ?
 // 								wxGETTEXT_IN_CONTEXT("Layers", wxString(option.label.c_str()):
 // 								L_str(option.label);
-			label = new wxStaticText(parent(), wxID_ANY, str_label + ":", wxDefaultPosition, wxDefaultSize);
-			label->SetFont(label_font);
-			sizer_tmp->Add(label, 0, /*wxALIGN_RIGHT |*/ wxALIGN_CENTER_VERTICAL, 0);
-		}
+            label = new wxStaticText(parent(), wxID_ANY, str_label + ":", wxDefaultPosition, wxDefaultSize);
+            label->SetFont(label_font);
+            sizer_tmp->Add(label, 0, /*wxALIGN_RIGHT |*/ wxALIGN_CENTER_VERTICAL, 0);
+        }
 
 		// add field
 		const Option& opt_ref = opt;
