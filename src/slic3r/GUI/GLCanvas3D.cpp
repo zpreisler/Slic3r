@@ -617,45 +617,113 @@ bool GLCanvas3D::Bed::_are_equal(const Pointfs& bed_1, const Pointfs& bed_2)
     return true;
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+const double GLCanvas3D::Axes::Radius = 0.5;
+const double GLCanvas3D::Axes::ArrowBaseRadius = 2.5 * GLCanvas3D::Axes::Radius;
+const double GLCanvas3D::Axes::ArrowLength = 5.0;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 GLCanvas3D::Axes::Axes()
     : origin(Vec3d::Zero())
-    , length(0.0f)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    , length(Vec3d::Zero())
+//    , length(0.0f)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_quadric = ::gluNewQuadric();
+    if (m_quadric != nullptr)
+        ::gluQuadricDrawStyle(m_quadric, GLU_FILL);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
-void GLCanvas3D::Axes::render(bool depth_test) const
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+GLCanvas3D::Axes::~Axes()
 {
-    if (depth_test)
-        ::glEnable(GL_DEPTH_TEST);
-    else
-        ::glDisable(GL_DEPTH_TEST);
+    if (m_quadric != nullptr)
+        ::gluDeleteQuadric(m_quadric);
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glLineWidth(3.0f);
-//    ::glLineWidth(2.0f);
+void GLCanvas3D::Axes::render() const
+//void GLCanvas3D::Axes::render(bool depth_test) const
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glBegin(GL_LINES);
-    // draw line for x axis
+{
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if (m_quadric == nullptr)
+        return;
+
+    ::glEnable(GL_DEPTH_TEST);
+    ::glEnable(GL_LIGHTING);
+
+    // x axis
     ::glColor3f(1.0f, 0.0f, 0.0f);
-    ::glVertex3dv(origin.data());
-    ::glVertex3f((GLfloat)origin(0) + length, (GLfloat)origin(1), (GLfloat)origin(2));
-    // draw line for y axis
-    ::glColor3f(0.0f, 1.0f, 0.0f);
-    ::glVertex3dv(origin.data());
-    ::glVertex3f((GLfloat)origin(0), (GLfloat)origin(1) + length, (GLfloat)origin(2));
-    ::glEnd();
-    // draw line for Z axis
-    // (re-enable depth test so that axis is correctly shown when objects are behind it)
-    if (!depth_test)
-        ::glEnable(GL_DEPTH_TEST);
+    ::glPushMatrix();
+    ::glTranslated(origin(0), origin(1), origin(2));
+    ::glRotated(90.0, 0.0, 1.0, 0.0);
+    render_axis(length(0));
+    ::glPopMatrix();
 
-    ::glBegin(GL_LINES);
+    // y axis
+    ::glColor3f(0.0f, 1.0f, 0.0f);
+    ::glPushMatrix();
+    ::glTranslated(origin(0), origin(1), origin(2));
+    ::glRotated(-90.0, 1.0, 0.0, 0.0);
+    render_axis(length(1));
+    ::glPopMatrix();
+
+    // z axis
     ::glColor3f(0.0f, 0.0f, 1.0f);
-    ::glVertex3dv(origin.data());
-    ::glVertex3f((GLfloat)origin(0), (GLfloat)origin(1), (GLfloat)origin(2) + length);
-    ::glEnd();
+    ::glPushMatrix();
+    ::glTranslated(origin(0), origin(1), origin(2));
+    render_axis(length(2));
+    ::glPopMatrix();
+
+    ::glDisable(GL_LIGHTING);
+
+//    if (depth_test)
+//        ::glEnable(GL_DEPTH_TEST);
+//    else
+//        ::glDisable(GL_DEPTH_TEST);
+//
+//    ::glLineWidth(2.0f);
+//    ::glBegin(GL_LINES);
+//    // draw line for x axis
+//    ::glColor3f(1.0f, 0.0f, 0.0f);
+//    ::glVertex3dv(origin.data());
+//    ::glVertex3f((GLfloat)origin(0) + length, (GLfloat)origin(1), (GLfloat)origin(2));
+//    // draw line for y axis
+//    ::glColor3f(0.0f, 1.0f, 0.0f);
+//    ::glVertex3dv(origin.data());
+//    ::glVertex3f((GLfloat)origin(0), (GLfloat)origin(1) + length, (GLfloat)origin(2));
+//    ::glEnd();
+//    // draw line for Z axis
+//    // (re-enable depth test so that axis is correctly shown when objects are behind it)
+//    if (!depth_test)
+//        ::glEnable(GL_DEPTH_TEST);
+//
+//    ::glBegin(GL_LINES);
+//    ::glColor3f(0.0f, 0.0f, 1.0f);
+//    ::glVertex3dv(origin.data());
+//    ::glVertex3f((GLfloat)origin(0), (GLfloat)origin(1), (GLfloat)origin(2) + length);
+//    ::glEnd();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::Axes::render_axis(double length) const
+{
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, Radius, Radius, length, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, Radius, 32, 1);
+    ::glTranslated(0.0, 0.0, length);
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, ArrowBaseRadius, 0.0, ArrowLength, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, ArrowBaseRadius, 32, 1);
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 GLCanvas3D::Shader::Shader()
     : m_shader(nullptr)
@@ -1452,6 +1520,13 @@ bool GLCanvas3D::Selection::is_from_single_object() const
     return (0 <= idx) && (idx < 1000);
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+bool GLCanvas3D::Selection::requires_local_axes() const
+{
+    return (m_mode == Volume) && is_from_single_object();
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 int GLCanvas3D::Selection::get_object_idx() const
 {
     return (m_cache.content.size() == 1) ? m_cache.content.begin()->first : -1;
@@ -1999,7 +2074,7 @@ void GLCanvas3D::Selection::render() const
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::Selection::render_center() const
 {
-    if (!m_valid || is_empty())
+    if (!m_valid || is_empty() || (m_quadric == nullptr))
         return;
 
     const Vec3d& center = get_bounding_box().center();
@@ -3698,7 +3773,7 @@ void GLCanvas3D::set_bed_shape(const Pointfs& shape)
     // Set the origin and size for painting of the coordinate system axes.
     m_axes.origin = Vec3d(0.0, 0.0, (double)GROUND_Z);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    set_axes_length(0.15f * (float)m_bed.get_bounding_box().max_size());
+    set_bed_axes_length(0.15 * m_bed.get_bounding_box().max_size());
 //    set_axes_length(0.3f * (float)m_bed.get_bounding_box().max_size());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -3708,9 +3783,15 @@ void GLCanvas3D::set_bed_shape(const Pointfs& shape)
     m_dirty = true;
 }
 
-void GLCanvas3D::set_axes_length(float length)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::set_bed_axes_length(double length)
+//void GLCanvas3D::set_axes_length(float length)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 {
-    m_axes.length = length;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_axes.length = length * Vec3d::Ones();
+//    m_axes.length = length;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
 void GLCanvas3D::set_color_by(const std::string& value)
@@ -3972,17 +4053,28 @@ void GLCanvas3D::render()
     if (is_custom_bed) // untextured bed needs to be rendered before objects
     {
         _render_bed(theta);
-        // disable depth testing so that axes are not covered by ground
-        _render_axes(false);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//            // disable depth testing so that axes are not covered by ground
+//            _render_axes(false);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     }
 
     _render_objects();
     _render_sla_slices();
     _render_selection();
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if (m_selection.requires_local_axes())
+        _render_local_axes();
+    else
+        _render_axes();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
     if (!is_custom_bed) // textured bed needs to be rendered after objects
     {
-        _render_axes(true);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//            _render_axes(true);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         _render_bed(theta);
     }
 
@@ -5909,10 +6001,41 @@ void GLCanvas3D::_render_bed(float theta) const
     m_bed.render(theta);
 }
 
-void GLCanvas3D::_render_axes(bool depth_test) const
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::_render_axes() const
 {
-    m_axes.render(depth_test);
+    m_axes.render();
 }
+//void GLCanvas3D::_render_axes(bool depth_test) const
+//{
+//    m_axes.render(depth_test);
+//}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::_render_local_axes() const
+{
+    if (m_model == nullptr)
+        return;
+
+    int object_id = m_selection.get_object_idx();
+    if ((object_id < 0) || ((int)m_model->objects.size() <= object_id))
+        return;
+
+    int instance_id = m_selection.get_instance_idx();
+    if ((instance_id < 0) || ((int)m_model->objects[object_id]->instances.size() <= instance_id))
+        return;
+
+    const GLVolume* volume = m_selection.get_volume(*m_selection.get_volume_idxs().begin());
+    
+    ::glPushMatrix();
+    Axes axes;
+    axes.length = m_model->objects[object_id]->full_raw_mesh().bounding_box().size();
+    ::glMultMatrixd(volume->get_instance_transformation().get_matrix().data());
+    axes.render();
+    ::glPopMatrix();
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::_render_objects() const
 {
