@@ -387,13 +387,13 @@ void BackgroundSlicingProcess::schedule_upload(Slic3r::PrintHostJob upload_job)
 	if (! m_export_path.empty())
 		return;
 
-	const auto path = boost::filesystem::temp_directory_path()
+	const boost::filesystem::path path = boost::filesystem::temp_directory_path()
 		/ boost::filesystem::unique_path(".upload.%%%%-%%%%-%%%%-%%%%.gcode");
 
 	// Guard against entering the export step before changing the export path.
 	tbb::mutex::scoped_lock lock(m_print->state_mutex());
 	this->invalidate_step(bspsGCodeFinalize);
-	m_export_path = path.native();
+	m_export_path = path.string();
 	m_upload_job = std::move(upload_job);
 }
 
