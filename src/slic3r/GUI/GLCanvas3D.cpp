@@ -2262,6 +2262,7 @@ void GLCanvas3D::Selection::_update_type()
         v->disabled = requires_disable ? (v->object_idx() != object_idx) || (v->instance_idx() != instance_idx) : false;
     }
 
+#if ENABLE_SELECTION_DEBUG_OUTPUT
     std::cout << "Selection: ";
     std::cout << "mode: ";
     switch (m_mode)
@@ -2343,6 +2344,7 @@ void GLCanvas3D::Selection::_update_type()
         break;
     }
     }
+#endif // ENABLE_SELECTION_DEBUG_OUTPUT
 }
 
 void GLCanvas3D::Selection::_set_caches()
