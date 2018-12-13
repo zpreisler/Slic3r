@@ -1196,6 +1196,14 @@ GLCanvas3D::Selection::VolumeCache::VolumeCache(const Vec3d& position, const Vec
 }
 #endif // ENABLE_MODELVOLUME_TRANSFORM
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+const double GLCanvas3D::Selection::HintCylinderRadius = 0.5;
+const double GLCanvas3D::Selection::HintArrowBaseRadius = 2.5 * GLCanvas3D::Selection::HintCylinderRadius;
+const double GLCanvas3D::Selection::HintArrowLength = 5.0;
+const double GLCanvas3D::Selection::HintTorusRadius = 10.0;
+const double GLCanvas3D::Selection::HintTorusThickness = 1.0;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 GLCanvas3D::Selection::Selection()
     : m_volumes(nullptr)
     , m_model(nullptr)
@@ -1520,13 +1528,6 @@ bool GLCanvas3D::Selection::is_from_single_object() const
     return (0 <= idx) && (idx < 1000);
 }
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-bool GLCanvas3D::Selection::requires_local_axes() const
-{
-    return (m_mode == Volume) && is_from_single_instance();
-}
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 int GLCanvas3D::Selection::get_object_idx() const
 {
     return (m_cache.content.size() == 1) ? m_cache.content.begin()->first : -1;
@@ -1582,7 +1583,7 @@ void GLCanvas3D::Selection::translate(const Vec3d& displacement)
     if ((m_mode == Volume) || (*m_volumes)[i]->is_wipe_tower)
     {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        if (requires_local_axes())
+        if (_requires_local_axes())
             (*m_volumes)[i]->set_volume_offset(m_cache.volumes_data[i].get_volume_position() + displacement);
         else
         {
@@ -1645,7 +1646,7 @@ void GLCanvas3D::Selection::rotate(const Vec3d& rotation, bool local)
 #if ENABLE_WORLD_ROTATIONS
         {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-            if (requires_local_axes())
+            if (_requires_local_axes())
                 (*m_volumes)[i]->set_volume_rotation(rotation);
             else
             {
@@ -1680,7 +1681,7 @@ void GLCanvas3D::Selection::rotate(const Vec3d& rotation, bool local)
                 // extracts rotations from the composed transformation
                 Vec3d new_rotation = Geometry::extract_euler_angles(m * m_cache.volumes_data[i].get_volume_rotation_matrix());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                if (!local || requires_local_axes())
+                if (!local || _requires_local_axes())
 //                if (!local)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 {
@@ -2090,25 +2091,30 @@ void GLCanvas3D::Selection::render() const
     // render cumulative bounding box of selected volumes
     _render_selected_volumes();
     _render_synchronized_volumes();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    _render_center();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-void GLCanvas3D::Selection::render_center() const
+void GLCanvas3D::Selection::render_sidebar_hints(const std::string& sidebar_field) const
 {
-    if (!m_valid || is_empty() || (m_quadric == nullptr))
+    if (sidebar_field.empty())
         return;
 
-    const Vec3d& center = get_bounding_box().center();
-
-    ::glDisable(GL_DEPTH_TEST);
+    ::glClear(GL_DEPTH_BUFFER_BIT);
+    ::glEnable(GL_DEPTH_TEST);
 
     ::glEnable(GL_LIGHTING);
 
-    ::glColor3f(1.0f, 1.0f, 1.0f);
-    ::glPushMatrix();
-    ::glTranslated(center(0), center(1), center(2));
-    ::gluSphere(m_quadric, 1.0, 32, 32);
-    ::glPopMatrix();
+    if (boost::starts_with(sidebar_field, "position"))
+        _render_sidebar_position_hints(sidebar_field);
+    else if (boost::starts_with(sidebar_field, "rotation"))
+        _render_sidebar_rotation_hints(sidebar_field);
+    else if (boost::starts_with(sidebar_field, "scale"))
+        _render_sidebar_scale_hints(sidebar_field);
+    else if (boost::starts_with(sidebar_field, "size"))
+        _render_sidebar_size_hints(sidebar_field);
 
     ::glDisable(GL_LIGHTING);
 }
@@ -2516,6 +2522,189 @@ void GLCanvas3D::Selection::_render_bounding_box(const BoundingBoxf3& box, float
     ::glEnd();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void GLCanvas3D::Selection::_render_center() const
+{
+    if (!m_valid || is_empty() || (m_quadric == nullptr))
+        return;
+
+    const Vec3d& center = get_bounding_box().center();
+
+    ::glDisable(GL_DEPTH_TEST);
+
+    ::glEnable(GL_LIGHTING);
+
+    ::glColor3f(1.0f, 1.0f, 1.0f);
+    ::glPushMatrix();
+    ::glTranslated(center(0), center(1), center(2));
+    ::gluSphere(m_quadric, 1.0, 32, 32);
+    ::glPopMatrix();
+
+    ::glDisable(GL_LIGHTING);
+}
+
+void GLCanvas3D::Selection::_render_sidebar_position_hints(const std::string& sidebar_field) const
+{
+    if (is_single_full_instance())
+    {
+        const GLVolume* volume = (*m_volumes)[*m_list.begin()];
+        Vec3d size = 10.0 * Vec3d::Ones() + 0.5 * m_model->objects[volume->object_idx()]->raw_bounding_box().size();
+        const Vec3d offset = volume->get_instance_offset();
+
+        ::glPushMatrix();
+        ::glTranslated(offset(0), offset(1), offset(2));
+
+        if (boost::ends_with(sidebar_field, "x"))
+        {
+            ::glColor3f(1.0f, 0.0f, 0.0f);
+            ::glRotated(90.0, 0.0, 1.0, 0.0);
+            _render_sidebar_position_hint(X, size(0));
+        }
+        else if (boost::ends_with(sidebar_field, "y"))
+        {
+            ::glColor3f(0.0f, 1.0f, 0.0f);
+            ::glRotated(-90.0, 1.0, 0.0, 0.0);
+            _render_sidebar_position_hint(Y, size(1));
+        }
+        else if (boost::ends_with(sidebar_field, "z"))
+        {
+            ::glColor3f(0.0f, 0.0f, 1.0f);
+            _render_sidebar_position_hint(Z, size(2));
+        }
+
+        ::glPopMatrix();
+    }
+    else
+    {
+    }
+}
+
+void GLCanvas3D::Selection::_render_sidebar_rotation_hints(const std::string& sidebar_field) const
+{
+    if (is_single_full_instance())
+    {
+        const GLVolume* volume = (*m_volumes)[*m_list.begin()];
+        Vec3d size = volume->get_instance_scaling_factor().cwiseProduct(20.0 * Vec3d::Ones() + m_model->objects[volume->object_idx()]->full_raw_mesh().bounding_box().size());
+
+        ::glPushMatrix();
+        ::glMultMatrixd(volume->get_instance_transformation().get_matrix(false, false, true, true).data());
+
+        if (boost::ends_with(sidebar_field, "x"))
+        {
+            ::glColor3f(1.0f, 0.0f, 0.0f);
+            ::glRotated(90.0, 0.0, 1.0, 0.0);
+            _render_sidebar_rotation_hint(X, size(0));
+        }
+        else if (boost::ends_with(sidebar_field, "y"))
+        {
+            ::glColor3f(0.0f, 1.0f, 0.0f);
+            ::glRotated(-90.0, 1.0, 0.0, 0.0);
+            _render_sidebar_rotation_hint(Y, size(1));
+        }
+        else if (boost::ends_with(sidebar_field, "z"))
+        {
+            ::glColor3f(0.0f, 0.0f, 1.0f);
+            _render_sidebar_rotation_hint(Z, size(2));
+        }
+
+        ::glPopMatrix();
+    }
+    else
+    {
+    }
+}
+
+void GLCanvas3D::Selection::_render_sidebar_scale_hints(const std::string& sidebar_field) const
+{
+    if (is_single_full_instance())
+    {
+        const GLVolume* volume = (*m_volumes)[*m_list.begin()];
+        Vec3d size = volume->get_instance_scaling_factor().cwiseProduct(20.0 * Vec3d::Ones() + m_model->objects[volume->object_idx()]->full_raw_mesh().bounding_box().size());
+
+        ::glPushMatrix();
+        ::glMultMatrixd(volume->get_instance_transformation().get_matrix(false, false, true, true).data());
+
+        if (boost::ends_with(sidebar_field, "x"))
+        {
+            ::glColor3f(1.0f, 0.0f, 0.0f);
+            ::glRotated(90.0, 0.0, 1.0, 0.0);
+            _render_sidebar_scale_hint(X, size(0));
+        }
+        else if (boost::ends_with(sidebar_field, "y"))
+        {
+            ::glColor3f(0.0f, 1.0f, 0.0f);
+            ::glRotated(-90.0, 1.0, 0.0, 0.0);
+            _render_sidebar_scale_hint(Y, size(1));
+        }
+        else if (boost::ends_with(sidebar_field, "z"))
+        {
+            ::glColor3f(0.0f, 0.0f, 1.0f);
+            _render_sidebar_scale_hint(Z, size(2));
+        }
+
+        ::glPopMatrix();
+    }
+    else
+    {
+    }
+}
+
+void GLCanvas3D::Selection::_render_sidebar_size_hints(const std::string& sidebar_field) const
+{
+}
+
+void GLCanvas3D::Selection::_render_sidebar_position_hint(Axis axis, double length) const
+{
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, HintCylinderRadius, HintCylinderRadius, length, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, HintCylinderRadius, 32, 1);
+    ::glTranslated(0.0, 0.0, length);
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, HintArrowBaseRadius, 0.0, HintArrowLength, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, HintArrowBaseRadius, 32, 1);
+}
+
+void GLCanvas3D::Selection::_render_sidebar_rotation_hint(Axis axis, double length) const
+{
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluCylinder(m_quadric, HintTorusRadius, HintTorusRadius, HintTorusThickness, 32, 1);
+    ::gluDisk(m_quadric, HintTorusRadius, HintTorusRadius + HintTorusThickness, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, HintTorusRadius + HintTorusThickness, HintTorusRadius + HintTorusThickness, HintTorusThickness, 32, 1);
+    ::glPushMatrix();
+    ::glTranslated(0.0, 0.0, HintTorusThickness);
+    ::gluDisk(m_quadric, HintTorusRadius, HintTorusRadius + HintTorusThickness, 32, 1);
+    ::glPopMatrix();
+
+    ::glTranslated(0.0, 0.0, -0.5 * length);
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, HintCylinderRadius, HintCylinderRadius, length, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, HintCylinderRadius, 32, 1);
+    ::glTranslated(0.0, 0.0, length);
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, HintArrowBaseRadius, 0.0, HintArrowLength, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, HintArrowBaseRadius, 32, 1);
+}
+
+void GLCanvas3D::Selection::_render_sidebar_scale_hint(Axis axis, double length) const
+{
+    ::glTranslated(0.0, 0.0, -0.5 * (length + HintArrowLength));
+    ::gluQuadricOrientation(m_quadric, GLU_OUTSIDE);
+    ::gluCylinder(m_quadric, 0.0, HintArrowBaseRadius, HintArrowLength, 32, 1);
+    ::glTranslated(0.0, 0.0, HintArrowLength);
+    ::gluDisk(m_quadric, 0.0, HintArrowBaseRadius, 32, 1);
+    ::gluCylinder(m_quadric, HintCylinderRadius, HintCylinderRadius, length, 32, 1);
+    ::glTranslated(0.0, 0.0, length);
+    ::gluCylinder(m_quadric, HintArrowBaseRadius, 0.0, HintArrowLength, 32, 1);
+    ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
+    ::gluDisk(m_quadric, 0.0, HintArrowBaseRadius, 32, 1);
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 void GLCanvas3D::Selection::_synchronize_unselected_instances()
 {
     std::set<unsigned int> done;  // prevent processing volumes twice
@@ -2646,6 +2835,14 @@ void GLCanvas3D::Selection::_ensure_on_bed()
     }
 }
 #endif // ENABLE_ENSURE_ON_BED_WHILE_SCALING
+
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+bool GLCanvas3D::Selection::_requires_local_axes() const
+{
+    return (m_mode == Volume) && is_from_single_instance();
+}
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 const float GLCanvas3D::Gizmos::OverlayTexturesScale = 1.0f;
 const float GLCanvas3D::Gizmos::OverlayOffsetX = 10.0f * OverlayTexturesScale;
@@ -3585,6 +3782,9 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas)
     , m_view_toolbar(nullptr)
 #endif // ENABLE_REMOVE_TABS_FROM_PLATER
     , m_use_clipping_planes(false)
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    , m_sidebar_field("")
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     , m_config(nullptr)
     , m_process(nullptr)
     , m_model(nullptr)
@@ -4106,9 +4306,9 @@ void GLCanvas3D::render()
     _render_selection();
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    if (m_selection.requires_local_axes())
-        _render_local_axes();
-    else
+//    if (m_selection.requires_local_axes())
+//        _render_local_axes();
+//    else
         _render_axes();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -4126,7 +4326,7 @@ void GLCanvas3D::render()
     m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    _render_selection_extensions();
+    _render_selection_sidebar_hints();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     _render_current_gizmo();
@@ -5586,7 +5786,9 @@ void GLCanvas3D::update_gizmos_on_off_state()
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::handle_sidebar_focus_event(const std::string& opt_key, bool focus_on)
 {
-    if (focus_on && m_gizmos.is_running())
+    m_sidebar_field = focus_on ? opt_key : "";
+
+    if (!m_sidebar_field.empty())
     {
         m_gizmos.reset_all_states();
         m_dirty = true;
@@ -6065,29 +6267,29 @@ void GLCanvas3D::_render_axes() const
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-void GLCanvas3D::_render_local_axes() const
-{
-    if (m_model == nullptr)
-        return;
-
-    int object_id = m_selection.get_object_idx();
-    if ((object_id < 0) || ((int)m_model->objects.size() <= object_id))
-        return;
-
-    int instance_id = m_selection.get_instance_idx();
-    if ((instance_id < 0) || ((int)m_model->objects[object_id]->instances.size() <= instance_id))
-        return;
-
-    const GLVolume* volume = m_selection.get_volume(*m_selection.get_volume_idxs().begin());
-    
-    ::glPushMatrix();
-    Axes axes;
-    Vec3d size = m_model->objects[object_id]->full_raw_mesh().bounding_box().size();
-    axes.length = 10.0 * Vec3d::Ones() + size;
-    ::glMultMatrixd(volume->get_instance_transformation().get_matrix().data());
-    axes.render();
-    ::glPopMatrix();
-}
+//void GLCanvas3D::_render_local_axes() const
+//{
+//    if (m_model == nullptr)
+//        return;
+//
+//    int object_id = m_selection.get_object_idx();
+//    if ((object_id < 0) || ((int)m_model->objects.size() <= object_id))
+//        return;
+//
+//    int instance_id = m_selection.get_instance_idx();
+//    if ((instance_id < 0) || ((int)m_model->objects[object_id]->instances.size() <= instance_id))
+//        return;
+//
+//    const GLVolume* volume = m_selection.get_volume(*m_selection.get_volume_idxs().begin());
+//    
+//    ::glPushMatrix();
+//    Axes axes;
+//    Vec3d size = m_model->objects[object_id]->full_raw_mesh().bounding_box().size();
+//    axes.length = 10.0 * Vec3d::Ones() + size;
+//    ::glMultMatrixd(volume->get_instance_transformation().get_matrix().data());
+//    axes.render();
+//    ::glPopMatrix();
+//}
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::_render_objects() const
@@ -6531,9 +6733,9 @@ void GLCanvas3D::_render_sla_slices() const
 }
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-void GLCanvas3D::_render_selection_extensions() const
+void GLCanvas3D::_render_selection_sidebar_hints() const
 {
-    m_selection.render_center();
+    m_selection.render_sidebar_hints(m_sidebar_field);
 }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
