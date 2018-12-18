@@ -1170,20 +1170,20 @@ GLCanvas3D::Selection::Selection()
     , m_valid(false)
     , m_bounding_box_dirty(true)
 {
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_RENDER_SELECTION_CENTER
     m_quadric = ::gluNewQuadric();
     if (m_quadric != nullptr)
         ::gluQuadricDrawStyle(m_quadric, GLU_FILL);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_RENDER_SELECTION_CENTER
 }
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_RENDER_SELECTION_CENTER
 GLCanvas3D::Selection::~Selection()
 {
     if (m_quadric != nullptr)
         ::gluDeleteQuadric(m_quadric);
 }
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
 void GLCanvas3D::Selection::set_volumes(GLVolumePtrs* volumes)
 {
@@ -2036,19 +2036,35 @@ void GLCanvas3D::Selection::erase()
 
 void GLCanvas3D::Selection::render() const
 {
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (!m_valid || is_empty())
-//    if (is_empty())
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         return;
 
     // render cumulative bounding box of selected volumes
     _render_selected_volumes();
     _render_synchronized_volumes();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    _render_center();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
+
+#if ENABLE_RENDER_SELECTION_CENTER
+void GLCanvas3D::Selection::render_center() const
+{
+    if (!m_valid || is_empty() || (m_quadric == nullptr))
+        return;
+
+    const Vec3d& center = get_bounding_box().center();
+
+    ::glDisable(GL_DEPTH_TEST);
+
+    ::glEnable(GL_LIGHTING);
+
+    ::glColor3f(1.0f, 1.0f, 1.0f);
+    ::glPushMatrix();
+    ::glTranslated(center(0), center(1), center(2));
+    ::gluSphere(m_quadric, 0.75, 32, 32);
+    ::glPopMatrix();
+
+    ::glDisable(GL_LIGHTING);
+}
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::Selection::render_sidebar_hints(const std::string& sidebar_field) const
@@ -2477,26 +2493,6 @@ void GLCanvas3D::Selection::_render_bounding_box(const BoundingBoxf3& box, float
 }
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-void GLCanvas3D::Selection::_render_center() const
-{
-    if (!m_valid || is_empty() || (m_quadric == nullptr))
-        return;
-
-    const Vec3d& center = get_bounding_box().center();
-
-    ::glDisable(GL_DEPTH_TEST);
-
-    ::glEnable(GL_LIGHTING);
-
-    ::glColor3f(1.0f, 1.0f, 1.0f);
-    ::glPushMatrix();
-    ::glTranslated(center(0), center(1), center(2));
-    ::gluSphere(m_quadric, 1.0, 32, 32);
-    ::glPopMatrix();
-
-    ::glDisable(GL_LIGHTING);
-}
-
 void GLCanvas3D::Selection::_render_sidebar_position_hints(const std::string& sidebar_field) const
 {
     if (is_single_full_instance())
@@ -4358,6 +4354,10 @@ void GLCanvas3D::render()
 
     if (!is_custom_bed) // textured bed needs to be rendered after objects
         _render_bed(theta);
+
+#if ENABLE_RENDER_SELECTION_CENTER
+    _render_selection_center();
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
     // we need to set the mouse's scene position here because the depth buffer
     // could be invalidated by the following gizmo render methods
@@ -6429,6 +6429,14 @@ void GLCanvas3D::_render_selection() const
     if (!m_gizmos.is_running())
         m_selection.render();
 }
+
+#if ENABLE_RENDER_SELECTION_CENTER
+void GLCanvas3D::_render_selection_center() const
+{
+    if (!m_gizmos.is_running())
+        m_selection.render_center();
+}
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
 void GLCanvas3D::_render_warning_texture() const
 {

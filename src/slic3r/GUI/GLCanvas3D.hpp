@@ -499,15 +499,15 @@ public:
         mutable BoundingBoxf3 m_bounding_box;
         mutable bool m_bounding_box_dirty;
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_RENDER_SELECTION_CENTER
         GLUquadricObj* m_quadric;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
     public:
         Selection();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_RENDER_SELECTION_CENTER
         ~Selection();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_RENDER_SELECTION_CENTER
 
         void set_volumes(GLVolumePtrs* volumes);
 
@@ -582,6 +582,9 @@ public:
         void erase();
 
         void render() const;
+#if ENABLE_RENDER_SELECTION_CENTER
+        void render_center() const;
+#endif // ENABLE_RENDER_SELECTION_CENTER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         void render_sidebar_hints(const std::string& sidebar_field) const;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -601,7 +604,6 @@ public:
         void _render_synchronized_volumes() const;
         void _render_bounding_box(const BoundingBoxf3& box, float* color) const;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        void _render_center() const;
         void _render_sidebar_position_hints(const std::string& sidebar_field) const;
         void _render_sidebar_rotation_hints(const std::string& sidebar_field) const;
         void _render_sidebar_scale_hints(const std::string& sidebar_field) const;
@@ -1055,6 +1057,9 @@ private:
     void _render_axes() const;
     void _render_objects() const;
     void _render_selection() const;
+#if ENABLE_RENDER_SELECTION_CENTER
+    void _render_selection_center() const;
+#endif // ENABLE_RENDER_SELECTION_CENTER
     void _render_warning_texture() const;
     void _render_legend_texture() const;
     void _render_layer_editing_overlay() const;
