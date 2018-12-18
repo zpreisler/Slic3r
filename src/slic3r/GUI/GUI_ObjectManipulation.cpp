@@ -339,6 +339,9 @@ void ObjectManipulation::reset_rotation_value()
 
 void ObjectManipulation::reset_scale_value()
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//    m_og->set_value("scale_unit", _("%"));
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_og->set_value("scale_x", def_100);
     m_og->set_value("scale_y", def_100);
     m_og->set_value("scale_z", def_100);
