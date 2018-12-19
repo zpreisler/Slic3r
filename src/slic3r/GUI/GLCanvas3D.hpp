@@ -613,6 +613,7 @@ public:
         void _render_sidebar_position_hint(Axis axis, double length) const;
         void _render_sidebar_rotation_hint(Axis axis, double length) const;
         void _render_sidebar_scale_hint(Axis axis, double length) const;
+        void _render_sidebar_size_hint(Axis axis, double length) const;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         void _synchronize_unselected_instances();
         void _synchronize_unselected_volumes();

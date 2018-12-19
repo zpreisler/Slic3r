@@ -2650,6 +2650,10 @@ void GLCanvas3D::Selection::_render_sidebar_scale_hint(Axis axis, double length)
     ::gluQuadricOrientation(m_quadric, GLU_INSIDE);
     ::gluDisk(m_quadric, 0.0, HintArrowBaseRadius, 32, 1);
 }
+
+void GLCanvas3D::Selection::_render_sidebar_size_hint(Axis axis, double length) const
+{
+}
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::Selection::_synchronize_unselected_instances()
