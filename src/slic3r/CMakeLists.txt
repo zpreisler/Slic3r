@@ -107,6 +107,8 @@ add_library(libslic3r_gui STATIC
     GUI/ProgressStatusBar.cpp
     GUI/PrintHostDialogs.cpp
     GUI/PrintHostDialogs.hpp
+    GUI/UndoRedo.cpp
+    GUI/UndoRedo.hpp
     Utils/Http.cpp
     Utils/Http.hpp
     Utils/FixModelByWin10.cpp

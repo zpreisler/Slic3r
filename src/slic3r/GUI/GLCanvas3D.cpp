@@ -10,6 +10,7 @@
 #include "libslic3r/Utils.hpp"
 #include "slic3r/GUI/3DScene.hpp"
 #include "slic3r/GUI/BackgroundSlicingProcess.hpp"
+#include "slic3r/GUI/UndoRedo.hpp"
 #include "slic3r/GUI/GLShader.hpp"
 #include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/PresetBundle.hpp"
@@ -5575,6 +5576,7 @@ void GLCanvas3D::do_move()
     Vec3d wipe_tower_origin = Vec3d::Zero();
 
     Selection::EMode selection_mode = m_selection.get_mode();
+    m_model->undo->begin_batch("Move");
 
     for (const GLVolume* v : m_volumes.volumes)
     {
@@ -5595,8 +5597,10 @@ void GLCanvas3D::do_move()
 #if ENABLE_MODELVOLUME_TRANSFORM
                 if (selection_mode == Selection::Instance)
                 {
+                    m_model->undo->begin(model_object->instances[instance_idx]);
                     model_object->instances[instance_idx]->set_offset(v->get_instance_offset());
                     object_moved = true;
+                    m_model->undo->end();
                 }
                 else if (selection_mode == Selection::Volume)
                 {
@@ -5629,6 +5633,8 @@ void GLCanvas3D::do_move()
         m->translate_instance(i.second, shift);
     }
 
+    m_model->undo->end_batch();
+
     if (object_moved)
         post_event(SimpleEvent(EVT_GLCANVAS_INSTANCE_MOVED));
 
@@ -5636,7 +5642,7 @@ void GLCanvas3D::do_move()
         post_event(Vec3dEvent(EVT_GLCANVAS_WIPETOWER_MOVED, std::move(wipe_tower_origin)));
 }
 
-void GLCanvas3D::do_rotate()
+void GLCanvas3D::do_rotate(bool flattenning)
 {
     if (m_model == nullptr)
         return;
@@ -5644,6 +5650,7 @@ void GLCanvas3D::do_rotate()
     std::set<std::pair<int, int>> done;  // keeps track of modified instances
 
     Selection::EMode selection_mode = m_selection.get_mode();
+    m_model->undo->begin_batch(std::string(flattenning ? L("Place on bed") : L("Rotate")));
 
     for (const GLVolume* v : m_volumes.volumes)
     {
@@ -5663,8 +5670,10 @@ void GLCanvas3D::do_rotate()
 #if ENABLE_MODELVOLUME_TRANSFORM
             if (selection_mode == Selection::Instance)
             {
+                m_model->undo->begin(model_object->instances[instance_idx]);
                 model_object->instances[instance_idx]->set_rotation(v->get_instance_rotation());
                 model_object->instances[instance_idx]->set_offset(v->get_instance_offset());
+                m_model->undo->end();
             }
             else if (selection_mode == Selection::Volume)
             {
@@ -5688,6 +5697,8 @@ void GLCanvas3D::do_rotate()
         m->translate_instance(i.second, shift);
     }
 
+    m_model->undo->end_batch();
+
     post_event(SimpleEvent(EVT_GLCANVAS_SCHEDULE_BACKGROUND_PROCESS));
 }
 
@@ -5699,6 +5710,7 @@ void GLCanvas3D::do_scale()
     std::set<std::pair<int, int>> done;  // keeps track of modified instances
 
     Selection::EMode selection_mode = m_selection.get_mode();
+    m_model->undo->begin_batch("Scale");
 
     for (const GLVolume* v : m_volumes.volumes)
     {
@@ -5718,8 +5730,10 @@ void GLCanvas3D::do_scale()
 #if ENABLE_MODELVOLUME_TRANSFORM
             if (selection_mode == Selection::Instance)
             {
+                m_model->undo->begin(model_object->instances[instance_idx]);
                 model_object->instances[instance_idx]->set_scaling_factor(v->get_instance_scaling_factor());
                 model_object->instances[instance_idx]->set_offset(v->get_instance_offset());
+                m_model->undo->end();
             }
             else if (selection_mode == Selection::Volume)
             {
@@ -5744,12 +5758,14 @@ void GLCanvas3D::do_scale()
         m->translate_instance(i.second, shift);
     }
 
+    m_model->undo->end_batch();
+
     post_event(SimpleEvent(EVT_GLCANVAS_SCHEDULE_BACKGROUND_PROCESS));
 }
 
 void GLCanvas3D::do_flatten()
 {
-    do_rotate();
+    do_rotate(true);
 }
 
 void GLCanvas3D::do_mirror()
@@ -5969,7 +5985,28 @@ bool GLCanvas3D::_init_toolbar()
     if (!m_toolbar.add_item(item))
         return false;
 
+    if (!m_toolbar.add_separator())
+        return false;
+
+    item.name = "undo";
+    item.tooltip = GUI::L_str("Undo");
+    item.sprite_id = 5;
+    item.is_toggable = false;
+    item.action_event = EVT_GLTOOLBAR_UNDO;
+    if (!m_toolbar.add_item(item))
+        return false;
+
+    item.name = "redo";
+    item.tooltip = GUI::L_str("Redo");
+    item.sprite_id = 4;
+    item.is_toggable = false;
+    item.action_event = EVT_GLTOOLBAR_REDO;
+    if (!m_toolbar.add_item(item))
+        return false;
+
     enable_toolbar_item("add", true);
+    enable_toolbar_item("undo", true);
+    enable_toolbar_item("redo", true);
 
     return true;
 }

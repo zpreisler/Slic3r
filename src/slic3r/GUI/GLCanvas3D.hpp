@@ -882,6 +882,9 @@ public:
 #if ENABLE_REMOVE_TABS_FROM_PLATER
 #if ENABLE_TOOLBAR_BACKGROUND_TEXTURE
     void set_view_toolbar(GLToolbar* toolbar) { m_view_toolbar = toolbar; }
+    void set_toolbar_tooltip(std::string name, std::string tooltip) {
+        m_toolbar.set_tooltip(name, tooltip);
+    }
 #else
     void set_view_toolbar(GLRadioToolbar* toolbar) { m_view_toolbar = toolbar; }
 #endif // ENABLE_TOOLBAR_BACKGROUND_TEXTURE
@@ -1017,7 +1020,7 @@ public:
 #endif // not ENABLE_IMGUI
 
     void do_move();
-    void do_rotate();
+    void do_rotate(bool flattenning = false);
     void do_scale();
     void do_flatten();
     void do_mirror();

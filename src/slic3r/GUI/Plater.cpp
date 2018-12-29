@@ -48,6 +48,7 @@
 #include "MainFrame.hpp"
 #include "3DScene.hpp"
 #include "GLCanvas3D.hpp"
+#include "UndoRedo.hpp"
 #include "GLToolbar.hpp"
 #include "GUI_Preview.hpp"
 #include "Tab.hpp"
@@ -973,6 +974,8 @@ struct Plater::priv
     void sla_optimize_rotation();
     void split_object();
     void split_volume();
+    void undo();
+    void redo();
 	bool background_processing_enabled() const { return this->get_config("background_processing") == "1"; }
     void update_print_volume_state();
     void schedule_background_process();
@@ -1016,6 +1019,8 @@ struct Plater::priv
     void on_action_split_objects(SimpleEvent&);
     void on_action_split_volumes(SimpleEvent&);
     void on_action_layersediting(SimpleEvent&);
+    void on_action_undo(SimpleEvent&);
+    void on_action_redo(SimpleEvent&);
 
     void on_object_select(SimpleEvent&);
     void on_viewport_changed(SimpleEvent&);
@@ -1214,6 +1219,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     view3D_canvas->Bind(EVT_GLTOOLBAR_SPLIT_OBJECTS, &priv::on_action_split_objects, this);
     view3D_canvas->Bind(EVT_GLTOOLBAR_SPLIT_VOLUMES, &priv::on_action_split_volumes, this);
     view3D_canvas->Bind(EVT_GLTOOLBAR_LAYERSEDITING, &priv::on_action_layersediting, this);
+    view3D_canvas->Bind(EVT_GLTOOLBAR_UNDO, &priv::on_action_undo, this);
+    view3D_canvas->Bind(EVT_GLTOOLBAR_REDO, &priv::on_action_redo, this);
     view3D_canvas->Bind(EVT_GLCANVAS_INIT, [this](SimpleEvent&) { init_view_toolbar(); });
 #else
     // 3DScene events:
@@ -1241,6 +1248,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     canvas3Dwidget->Bind(EVT_GLTOOLBAR_SPLIT_OBJECTS, &priv::on_action_split_objects, this);
     canvas3Dwidget->Bind(EVT_GLTOOLBAR_SPLIT_VOLUMES, &priv::on_action_split_volumes, this);
     canvas3Dwidget->Bind(EVT_GLTOOLBAR_LAYERSEDITING, &priv::on_action_layersediting, this);
+    canvas3Dwidget->Bind(EVT_GLTOOLBAR_UNDO, &priv::on_action_undo, this);
+    canvas3Dwidget->Bind(EVT_GLTOOLBAR_REDO, &priv::on_action_redo, this);
 #endif // ENABLE_REMOVE_TABS_FROM_PLATER
 
     // Preview events:
@@ -1986,6 +1995,30 @@ void Plater::priv::split_volume()
     wxGetApp().obj_list()->split();
 }
 
+void Plater::priv::undo()
+{
+    UndoRedo* undo = q->model().undo;
+    undo->undo();
+
+    std::string desc = L("Undo");
+    if (undo->anything_to_undo())
+        desc = desc + " (" + undo->get_undo_description() + ")";
+    q->canvas3D()->set_toolbar_tooltip("undo", desc);
+    update(true);
+}
+
+void Plater::priv::redo()
+{
+    UndoRedo* undo = q->model().undo;
+    undo->redo();
+
+    std::string desc = L("Redo");
+    if (undo->anything_to_redo())
+        desc = desc + " (" + undo->get_redo_description() + ")";
+    q->canvas3D()->set_toolbar_tooltip("redo", desc);
+    update(true);
+}
+
 void Plater::priv::schedule_background_process()
 {
     // Trigger the timer event after 0.5s
@@ -2480,6 +2513,16 @@ void Plater::priv::on_action_layersediting(SimpleEvent&)
     if (enable && !this->canvas3D->is_layers_editing_enabled())
         this->canvas3D->enable_toolbar_item("layersediting", false);
 #endif // ENABLE_REMOVE_TABS_FROM_PLATER
+}
+
+void Plater::priv::on_action_undo(SimpleEvent&)
+{
+    undo();
+}
+
+void Plater::priv::on_action_redo(SimpleEvent&)
+{
+    redo();
 }
 
 void Plater::priv::on_object_select(SimpleEvent& evt)

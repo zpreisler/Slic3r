@@ -25,6 +25,8 @@ wxDECLARE_EVENT(EVT_GLTOOLBAR_FEWER, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLTOOLBAR_SPLIT_OBJECTS, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLTOOLBAR_SPLIT_VOLUMES, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLTOOLBAR_LAYERSEDITING, SimpleEvent);
+wxDECLARE_EVENT(EVT_GLTOOLBAR_UNDO, SimpleEvent);
+wxDECLARE_EVENT(EVT_GLTOOLBAR_REDO, SimpleEvent);
 
 wxDECLARE_EVENT(EVT_GLVIEWTOOLBAR_3D, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLVIEWTOOLBAR_PREVIEW, SimpleEvent);
@@ -73,6 +75,7 @@ public:
 
     const std::string& get_name() const;
     const std::string& get_tooltip() const;
+    void set_tooltip(std::string tooltip);
 
     void do_action(wxEvtHandler *target);
 
@@ -251,6 +254,7 @@ public:
     void set_separator_size(float size);
     void set_gap_size(float size);
     void set_icons_scale(float scale);
+    void set_tooltip(std::string name, std::string tooltip);
 
     bool is_enabled() const;
     void set_enabled(bool enable);

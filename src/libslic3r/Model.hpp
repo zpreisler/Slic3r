@@ -24,6 +24,7 @@ class ModelObject;
 class ModelVolume;
 class Print;
 class SLAPrint;
+class UndoRedo;
 
 typedef std::string t_model_material_id;
 typedef std::string t_model_material_attribute;
@@ -594,8 +595,10 @@ public:
     ModelObjectPtrs     objects;
     
     // Default constructor assigns a new ID to the model.
-    Model() {}
+    Model();
     ~Model() { this->clear_objects(); this->clear_materials(); }
+
+    UndoRedo* undo;
 
     /* To be able to return an object from own copy / clone methods. Hopefully the compiler will do the "Copy elision" */
     /* (Omits copy and move(since C++11) constructors, resulting in zero - copy pass - by - value semantics). */

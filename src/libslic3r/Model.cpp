@@ -1,5 +1,6 @@
 #include "Model.hpp"
 #include "Geometry.hpp"
+#include "../slic3r/GUI/UndoRedo.hpp"
 
 #include "Format/AMF.hpp"
 #include "Format/OBJ.hpp"
@@ -22,6 +23,11 @@ namespace Slic3r {
 unsigned int Model::s_auto_extruder_id = 1;
 
 size_t ModelBase::s_last_id = 0;
+
+Model::Model()
+{
+    undo = new UndoRedo(this);
+}
 
 Model& Model::assign_copy(const Model &rhs)
 {

@@ -26,6 +26,8 @@ wxDEFINE_EVENT(EVT_GLTOOLBAR_FEWER, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLTOOLBAR_SPLIT_OBJECTS, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLTOOLBAR_SPLIT_VOLUMES, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLTOOLBAR_LAYERSEDITING, SimpleEvent);
+wxDEFINE_EVENT(EVT_GLTOOLBAR_UNDO, SimpleEvent);
+wxDEFINE_EVENT(EVT_GLTOOLBAR_REDO, SimpleEvent);
 
 wxDEFINE_EVENT(EVT_GLVIEWTOOLBAR_3D, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLVIEWTOOLBAR_PREVIEW, SimpleEvent);
@@ -63,6 +65,11 @@ const std::string& GLToolbarItem::get_name() const
 const std::string& GLToolbarItem::get_tooltip() const
 {
     return m_data.tooltip;
+}
+
+void GLToolbarItem::set_tooltip(std::string tooltip)
+{
+    m_data.tooltip = tooltip;
 }
 
 void GLToolbarItem::do_action(wxEvtHandler *target)
@@ -320,6 +327,16 @@ bool GLToolbar::add_item(const GLToolbarItem::Data& data)
     m_layout.dirty = true;
 #endif // ENABLE_TOOLBAR_BACKGROUND_TEXTURE
     return true;
+}
+
+void GLToolbar::set_tooltip(std::string name, std::string tooltip)
+{
+    for (GLToolbarItem* item : m_items) {
+        if (item->get_name() == name) {
+            item->set_tooltip(tooltip);
+            return;
+        }
+    }
 }
 
 bool GLToolbar::add_separator()
