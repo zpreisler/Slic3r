@@ -882,6 +882,7 @@ public:
 #if ENABLE_REMOVE_TABS_FROM_PLATER
 #if ENABLE_TOOLBAR_BACKGROUND_TEXTURE
     void set_view_toolbar(GLToolbar* toolbar) { m_view_toolbar = toolbar; }
+    void toolbar_update_undo_redo();
     void set_toolbar_tooltip(std::string name, std::string tooltip) {
         m_toolbar.set_tooltip(name, tooltip);
     }

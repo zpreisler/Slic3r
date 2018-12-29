@@ -3,6 +3,7 @@
 #include "GUI_App.hpp"
 #include "I18N.hpp"
 
+#include "UndoRedo.hpp"
 #include "OptionsGroup.hpp"
 #include "PresetBundle.hpp"
 #include "Tab.hpp"
@@ -304,7 +305,9 @@ void ObjectList::update_name_in_model(const wxDataViewItem& item)
 
     const int volume_id = m_objects_model->GetVolumeIdByItem(item);
     if (volume_id < 0) return;
+    m_objects->front()->get_model()->undo->begin((*m_objects)[obj_idx]->volumes[volume_id]);
     (*m_objects)[obj_idx]->volumes[volume_id]->name = m_objects_model->GetName(item).ToStdString();
+    m_objects->front()->get_model()->undo->end();
 }
 
 void ObjectList::init_icons()

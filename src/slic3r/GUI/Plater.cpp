@@ -2000,10 +2000,7 @@ void Plater::priv::undo()
     UndoRedo* undo = q->model().undo;
     undo->undo();
 
-    std::string desc = L("Undo");
-    if (undo->anything_to_undo())
-        desc = desc + " (" + undo->get_undo_description() + ")";
-    q->canvas3D()->set_toolbar_tooltip("undo", desc);
+    q->canvas3D()->toolbar_update_undo_redo();
     update(true);
 }
 
@@ -2012,10 +2009,7 @@ void Plater::priv::redo()
     UndoRedo* undo = q->model().undo;
     undo->redo();
 
-    std::string desc = L("Redo");
-    if (undo->anything_to_redo())
-        desc = desc + " (" + undo->get_redo_description() + ")";
-    q->canvas3D()->set_toolbar_tooltip("redo", desc);
+    q->canvas3D()->toolbar_update_undo_redo();
     update(true);
 }
 

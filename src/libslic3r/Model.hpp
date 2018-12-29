@@ -308,7 +308,7 @@ public:
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; };
     Type                type() const { return m_type; }
-    void                set_type(const Type t) { m_type = t; }
+    void                set_type(const Type t);
     bool                is_model_part()         const { return m_type == MODEL_PART; }
     bool                is_modifier()           const { return m_type == PARAMETER_MODIFIER; }
     bool                is_support_enforcer()   const { return m_type == SUPPORT_ENFORCER; }

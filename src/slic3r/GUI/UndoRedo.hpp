@@ -19,23 +19,37 @@ public:
         virtual ~Command() {}
         bool bound_to_previous = false;
         std::string description;
+        Model* m_model;
     };
     
     
-    class ChangeTransformation : public Command {
+    class Change : public Command {
     public:
-        ChangeTransformation(const Geometry::Transformation& old_trans, const Geometry::Transformation& new_trans);
-        ChangeTransformation(ModelInstance* inst, const Geometry::Transformation& old_trans, const Geometry::Transformation& new_trans);
-        ChangeTransformation(ModelVolume* vol, const Geometry::Transformation& old_trans, const Geometry::Transformation& new_trans);
-        
+        Change(ModelInstance* inst, const Geometry::Transformation& old_trans, const Geometry::Transformation& new_trans);
+        Change(ModelVolume* vol, const Geometry::Transformation& old_trans, const Geometry::Transformation& new_trans,
+                             const std::string old_name, const std::string new_name, ModelVolume::Type old_type, ModelVolume::Type new_type);
         void redo() override;
         void undo() override;
-
     private:
-        ModelInstance* m_instance = nullptr;
-        ModelVolume* m_volume = nullptr;
+        int m_mo_idx = -1;
+        int m_mi_idx = -1;
+        int m_mv_idx = -1;
         Geometry::Transformation m_old_trans;
         Geometry::Transformation m_new_trans;
+        std::string m_old_name;
+        std::string m_new_name;
+        ModelVolume::Type m_old_type;
+        ModelVolume::Type m_new_type;
+    };
+
+    class Add : public Command {
+    public:
+        Add(ModelInstance* mi, unsigned int mo_idx); // new instance
+        void redo() override;
+        void undo() override;
+    private:
+        unsigned int m_mo_idx;
+        Geometry::Transformation m_trans;
     };
 
 
@@ -51,7 +65,7 @@ public:
 
     void begin_batch(const std::string& desc);
     void end_batch();
-    
+
     void begin();                // new ModelObject is about to be created
     void begin(ModelObject*);   // ModelObject - deletion / name change / new instance / new ModelVolume / config change / layer_editing
     void begin(ModelInstance*); // ModelInstance - deletion / transformation matrix change
@@ -71,6 +85,8 @@ public:
     void undo();
     void redo();
     
+    bool working() const;
+
     std::string get_undo_description() const {
         return m_stack[m_index-1]->description;
     }
@@ -85,6 +101,7 @@ private:
     bool m_batch_start = false;
     bool m_batch_running = false;
     CommandType m_current_command_type = CommandType::None;
+    bool m_lock = false;
     Model* m_model;
     
     struct ModelInstanceData {
@@ -93,6 +110,20 @@ private:
         unsigned int inst_num;
         Geometry::Transformation transformation;
     }m_model_instance_data;
+
+    struct ModelVolumeData {
+        unsigned int mo_idx;
+        unsigned int mv_idx;
+        unsigned int vols_num;
+        Geometry::Transformation transformation;
+        ModelVolume::Type type;
+        std::string name;
+    }m_model_volume_data;
+
+    struct ModelObjectData {
+        unsigned int mo_idx;
+        unsigned int inst_num;
+    }m_model_object_data;
 };
 
 

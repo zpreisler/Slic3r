@@ -711,26 +711,37 @@ void ModelObject::clear_volumes()
 
 ModelInstance* ModelObject::add_instance()
 {
+    this->get_model()->undo->begin(this);
+
     ModelInstance* i = new ModelInstance(this);
     this->instances.push_back(i);
     this->invalidate_bounding_box();
+
+    this->get_model()->undo->end();
+
     return i;
 }
 
 ModelInstance* ModelObject::add_instance(const ModelInstance &other)
 {
+    this->get_model()->undo->begin(this);
     ModelInstance* i = new ModelInstance(this, other);
     this->instances.push_back(i);
     this->invalidate_bounding_box();
+    this->get_model()->undo->end();
     return i;
 }
 
 ModelInstance* ModelObject::add_instance(const Vec3d &offset, const Vec3d &scaling_factor, const Vec3d &rotation)
 {
+    this->get_model()->undo->begin_batch("Add instance");
     auto *instance = add_instance();
+    this->get_model()->undo->begin(instance);
     instance->set_offset(offset);
     instance->set_scaling_factor(scaling_factor);
     instance->set_rotation(rotation);
+    this->get_model()->undo->end();
+    this->get_model()->undo->end_batch();
     return instance;
 }
 
@@ -1355,6 +1366,13 @@ void ModelVolume::set_material(t_model_material_id material_id, const ModelMater
     m_material_id = material_id;
     if (! material_id.empty())
         this->object->get_model()->add_material(material_id, material);
+}
+
+void ModelVolume::set_type(const Type t)
+{
+    get_object()->get_model()->undo->begin(this);
+    m_type = t;
+    get_object()->get_model()->undo->end();
 }
 
 // Extract the current extruder ID based on this ModelVolume's config and the parent ModelObject's config.

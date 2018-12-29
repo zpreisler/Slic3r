@@ -5604,7 +5604,9 @@ void GLCanvas3D::do_move()
                 }
                 else if (selection_mode == Selection::Volume)
                 {
+                    m_model->undo->begin(model_object->volumes[volume_idx]);
                     model_object->volumes[volume_idx]->set_offset(v->get_volume_offset());
+                    m_model->undo->end();
                     object_moved = true;
                 }
                 if (object_moved)
@@ -5677,8 +5679,10 @@ void GLCanvas3D::do_rotate(bool flattenning)
             }
             else if (selection_mode == Selection::Volume)
             {
+                m_model->undo->begin(model_object->volumes[volume_idx]);
                 model_object->volumes[volume_idx]->set_rotation(v->get_volume_rotation());
                 model_object->volumes[volume_idx]->set_offset(v->get_volume_offset());
+                m_model->undo->end();
             }
 #else
             model_object->instances[instance_idx]->set_rotation(v->get_rotation());
@@ -5737,9 +5741,13 @@ void GLCanvas3D::do_scale()
             }
             else if (selection_mode == Selection::Volume)
             {
+                m_model->undo->begin(model_object->instances[instance_idx]);
                 model_object->instances[instance_idx]->set_offset(v->get_instance_offset());
+                m_model->undo->end();
+                m_model->undo->begin(model_object->volumes[volume_idx]);
                 model_object->volumes[volume_idx]->set_scaling_factor(v->get_volume_scaling_factor());
                 model_object->volumes[volume_idx]->set_offset(v->get_volume_offset());
+                m_model->undo->end();
             }
 #else
             model_object->instances[instance_idx]->set_scaling_factor(v->get_scaling_factor());
@@ -6005,8 +6013,6 @@ bool GLCanvas3D::_init_toolbar()
         return false;
 
     enable_toolbar_item("add", true);
-    enable_toolbar_item("undo", true);
-    enable_toolbar_item("redo", true);
 
     return true;
 }
@@ -8304,6 +8310,30 @@ void GLCanvas3D::_resize_toolbar() const
     }
 #endif // ENABLE_REMOVE_TABS_FROM_PLATER
 }
+
+#if ENABLE_TOOLBAR_BACKGROUND_TEXTURE
+void GLCanvas3D::toolbar_update_undo_redo()
+{
+    std::string desc = L("Undo");
+    if (m_model->undo->anything_to_undo()) {
+        desc = desc + " (" + m_model->undo->get_undo_description() + ")";
+        enable_toolbar_item("undo", true);
+    }
+    else
+        enable_toolbar_item("undo", false);
+    set_toolbar_tooltip("undo", desc);
+
+    desc = L("Redo");
+    if (m_model->undo->anything_to_redo()) {
+        desc = desc + " (" + m_model->undo->get_redo_description() + ")";
+        enable_toolbar_item("redo", true);
+    }
+    else
+        enable_toolbar_item("redo", false);
+    set_toolbar_tooltip("redo", desc);
+}
+#endif // ENABLE_TOOLBAR_BACKGROUND_TEXTURE
+
 
 const Print* GLCanvas3D::fff_print() const
 {
