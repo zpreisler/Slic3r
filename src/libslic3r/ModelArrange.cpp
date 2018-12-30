@@ -1,6 +1,7 @@
 #include "ModelArrange.hpp"
 #include "Model.hpp"
 #include "SVG.hpp"
+#include <slic3r/GUI/UndoRedo.hpp>
 
 #include <libnest2d.h>
 
@@ -553,6 +554,9 @@ void applyResult(
         Coord batch_offset,
         ShapeData2D& shapemap)
 {
+    UndoRedo* undo = shapemap[group[0].first].first->get_object()->get_model()->undo;
+    undo->begin_batch("Arrange");
+
     for(auto& r : group) {
         auto idx = r.first;     // get the original item index
         Item& item = r.second;  // get the item itself
@@ -570,9 +574,13 @@ void applyResult(
                    inst_ptr->get_offset()(Z));
 
         // write the transformation data into the model instance
+
+        undo->begin(inst_ptr);
         inst_ptr->set_rotation(Z, rot);
         inst_ptr->set_offset(foff);
+        undo->end();
     }
+    undo->end_batch();
 }
 
 BedShapeHint bedShape(const Polyline &bed) {

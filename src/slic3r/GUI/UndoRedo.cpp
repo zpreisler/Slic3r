@@ -91,23 +91,43 @@ void UndoRedo::Change::undo()
 
 ////////////////////////////////////////////////////////////////
 
-UndoRedo::Add::Add(ModelInstance* mi, unsigned int mo_idx) : m_mo_idx(mo_idx)
+UndoRedo::AddInstance::AddInstance(ModelInstance* mi, unsigned int mo_idx) : m_mo_idx(mo_idx)
 {
     m_model = mi->get_object()->get_model();
     m_trans = mi->get_transformation();
 }
 
-void UndoRedo::Add::redo()
+void UndoRedo::AddInstance::redo()
 {
     m_model->objects[m_mo_idx]->add_instance()->set_transformation(m_trans);
     GUI::wxGetApp().obj_list()->increase_object_instances(m_mo_idx, 1);
 }
 
-void UndoRedo::Add::undo()
+void UndoRedo::AddInstance::undo()
 {
     m_model->objects[m_mo_idx]->delete_last_instance();
     GUI::wxGetApp().obj_list()->decrease_object_instances(m_mo_idx, 1);
 
+}
+
+////////////////////////////////////////////////////////////////
+
+UndoRedo::RemoveInstance::RemoveInstance(Model* model, Geometry::Transformation trans, unsigned int mo_idx, unsigned int mi_idx)
+: m_mo_idx(mo_idx), m_mi_idx(mi_idx), m_trans(trans)
+{
+    m_model = model;
+}
+
+void UndoRedo::RemoveInstance::redo()
+{
+    m_model->objects[m_mo_idx]->delete_instance(m_mi_idx);
+    GUI::wxGetApp().obj_list()->decrease_object_instances(m_mo_idx, 1);
+}
+
+void UndoRedo::RemoveInstance::undo()
+{
+    m_model->objects[m_mo_idx]->add_instance(m_mi_idx)->set_transformation(m_trans);
+    GUI::wxGetApp().obj_list()->increase_object_instances(m_mo_idx, 1);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -140,7 +160,6 @@ void UndoRedo::begin(ModelInstance* inst)
     ModelObject* mo = inst->get_object();
     m_model_instance_data.mi_idx = get_idx(inst);
     m_model_instance_data.inst_num = mo->instances.size();
-    
     m_model_instance_data.mo_idx = get_idx(mo);
     m_model_instance_data.transformation = inst->get_transformation();
     m_current_command_type = CommandType::ModelInstanceManipulation;
@@ -192,7 +211,10 @@ void UndoRedo::end()
     if (m_current_command_type == CommandType::ModelInstanceManipulation) {
         if (m_model->objects[m_model_instance_data.mo_idx]->instances.size() != m_model_instance_data.inst_num) {
             // the instance was deleted
-
+            push(new RemoveInstance(m_model,
+                                    m_model_instance_data.transformation,
+                                    m_model_instance_data.mo_idx,
+                                    m_model_instance_data.mi_idx));
         }
         else {
             // the transformation matrix was changed
@@ -203,9 +225,9 @@ void UndoRedo::end()
     }
 
     if (m_current_command_type == CommandType::ModelObjectManipulation) {
-        if (m_model->objects[m_model_object_data.mo_idx]->instances.size() != m_model_object_data.inst_num) {
+        if (m_model->objects[m_model_object_data.mo_idx]->instances.size() > m_model_object_data.inst_num) {
             // an instance was added - the one at the end
-            push(new Add(m_model->objects[m_model_object_data.mo_idx]->instances.back(), m_model_object_data.mo_idx));
+            push(new AddInstance(m_model->objects[m_model_object_data.mo_idx]->instances.back(), m_model_object_data.mo_idx));
         }
     }
 
@@ -223,6 +245,9 @@ void UndoRedo::end()
 
     m_current_command_type = CommandType::None;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 void UndoRedo::push(Command* command) {
     if (m_batch_running)

@@ -201,7 +201,7 @@ public:
     void                    clear_volumes();
     bool                    is_multiparts() const { return volumes.size() > 1; }
 
-    ModelInstance*          add_instance();
+    ModelInstance*          add_instance(int idx = -1);
     ModelInstance*          add_instance(const ModelInstance &instance);
     ModelInstance*          add_instance(const Vec3d &offset, const Vec3d &scaling_factor, const Vec3d &rotation);
     void                    delete_instance(size_t idx);

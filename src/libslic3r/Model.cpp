@@ -709,12 +709,16 @@ void ModelObject::clear_volumes()
     this->invalidate_bounding_box();
 }
 
-ModelInstance* ModelObject::add_instance()
+ModelInstance* ModelObject::add_instance(int idx)
 {
+    if (idx == -1)
+        idx = instances.size();
+
     this->get_model()->undo->begin(this);
 
     ModelInstance* i = new ModelInstance(this);
-    this->instances.push_back(i);
+    this->instances.insert(instances.begin() + idx, i);
+    //this->instances.push_back(i);
     this->invalidate_bounding_box();
 
     this->get_model()->undo->end();
@@ -748,8 +752,10 @@ ModelInstance* ModelObject::add_instance(const Vec3d &offset, const Vec3d &scali
 void ModelObject::delete_instance(size_t idx)
 {
     ModelInstancePtrs::iterator i = this->instances.begin() + idx;
+    this->get_model()->undo->begin(instances[idx]);
     delete *i;
     this->instances.erase(i);
+    this->get_model()->undo->end();
     this->invalidate_bounding_box();
 }
 
@@ -760,9 +766,13 @@ void ModelObject::delete_last_instance()
 
 void ModelObject::clear_instances()
 {
-    for (ModelInstance *i : this->instances)
-        delete i;
-    this->instances.clear();
+    while (!instances.empty()) {
+        get_model()->undo->begin(instances.back());
+        delete instances.back();
+        instances.pop_back();
+        get_model()->undo->end();
+    }
+
     this->invalidate_bounding_box();
 }
 

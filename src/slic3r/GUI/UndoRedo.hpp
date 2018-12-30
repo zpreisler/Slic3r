@@ -42,9 +42,9 @@ public:
         ModelVolume::Type m_new_type;
     };
 
-    class Add : public Command {
+    class AddInstance : public Command {
     public:
-        Add(ModelInstance* mi, unsigned int mo_idx); // new instance
+        AddInstance(ModelInstance* mi, unsigned int mo_idx);
         void redo() override;
         void undo() override;
     private:
@@ -52,6 +52,16 @@ public:
         Geometry::Transformation m_trans;
     };
 
+    class RemoveInstance : public Command {
+    public:
+        RemoveInstance(Model* model, Geometry::Transformation trans, unsigned int mo_idx, unsigned int mi_idx);
+        void redo() override;
+        void undo() override;
+    private:
+        unsigned int m_mo_idx;
+        unsigned int m_mi_idx;
+        Geometry::Transformation m_trans;
+    };
 
     enum class CommandType {
         None,
@@ -66,7 +76,7 @@ public:
     void begin_batch(const std::string& desc);
     void end_batch();
 
-    void begin();                // new ModelObject is about to be created
+    void begin();               // new ModelObject is about to be created
     void begin(ModelObject*);   // ModelObject - deletion / name change / new instance / new ModelVolume / config change / layer_editing
     void begin(ModelInstance*); // ModelInstance - deletion / transformation matrix change
     void begin(ModelVolume*);   // ModelVolume - deletion / transformation change / ModelType change / name change / config change
@@ -96,7 +106,7 @@ public:
 
 private:
 	std::vector<std::unique_ptr<Command>> m_stack;
-	unsigned int m_index = 0; // points to a command to redo
+	unsigned int m_index = 0;
     std::string m_batch_desc = "";
     bool m_batch_start = false;
     bool m_batch_running = false;
