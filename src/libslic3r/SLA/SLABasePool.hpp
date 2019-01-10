@@ -27,6 +27,7 @@ struct PoolConfig {
     double min_wall_height_mm = 5;
     double max_merge_distance_mm = 50;
     double edge_radius_mm = 1;
+    bool   embed_object = true;
 
     ThrowOnCancel throw_on_cancel = [](){};
 
@@ -49,7 +50,7 @@ void create_base_pool(const ExPolygons& base_plate,
 /// min_wall_thickness and it should be corrected in the future. This method
 /// will return the correct value for further processing.
 inline double get_pad_elevation(const PoolConfig& cfg) {
-    return cfg.min_wall_thickness_mm;
+    return 0;//cfg.min_wall_thickness_mm;
 }
 
 inline double get_pad_fullheight(const PoolConfig& cfg) {

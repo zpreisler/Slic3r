@@ -5,6 +5,10 @@
 #include "SLABoostAdapter.hpp"
 #include "ClipperUtils.hpp"
 
+// We need the EdgeCache class from libnest2d's nfpplacer
+#include <libnest2d/backends/clipper/geometries.hpp>
+#include <libnest2d/placers/nfpplacer.hpp>
+
 //#include "SVG.hpp"
 //#include "benchmark.h"
 
@@ -81,9 +85,10 @@ Contour3D walls(const ExPolygon& floor_plate, const ExPolygon& ceiling,
 }
 
 /// Offsetting with clipper and smoothing the edges into a curvature.
-void offset(ExPolygon& sh, coord_t distance) {
+void offset(ExPolygon& sh, coord_t distance, bool edgerounding = true) {
     using ClipperLib::ClipperOffset;
     using ClipperLib::jtRound;
+    using ClipperLib::jtMiter;
     using ClipperLib::etClosedPolygon;
     using ClipperLib::Paths;
     using ClipperLib::Path;
@@ -100,11 +105,13 @@ void offset(ExPolygon& sh, coord_t distance) {
         return;
     }
 
+    auto jointype = edgerounding? jtRound : jtMiter;
+
     ClipperOffset offs;
     offs.ArcTolerance = 0.01*mm(1);
     Paths result;
-    offs.AddPath(ctour, jtRound, etClosedPolygon);
-    offs.AddPaths(holes, jtRound, etClosedPolygon);
+    offs.AddPath(ctour, jointype, etClosedPolygon);
+    offs.AddPaths(holes, jointype, etClosedPolygon);
     offs.Execute(result, static_cast<double>(distance));
 
     // Offsetting reverts the orientation and also removes the last vertex
@@ -458,6 +465,88 @@ void base_plate(const TriangleMesh &mesh, ExPolygons &output, float h,
     }
 }
 
+void offset_with_breakstick_holes(ExPolygon& expoly,
+                                  double padding,
+                                  double stride,
+                                  double stick_width) {
+
+    // We included libnest2d clipper backend so PolygonImpl is compatible with
+    // clipper Path and PointImpl is basically ClipperLib::IntPoint
+    using libnest2d::PolygonImpl;
+    using libnest2d::PointImpl;
+    using ClipperLib::ctDifference;
+    using ClipperLib::ptSubject;
+    using ClipperLib::ptClip;
+
+    // Summon our main tool from libnest2d
+    using EdgeCache = libnest2d::placers::EdgeCache<PolygonImpl>;
+
+    // We do the basic offsetting first
+    const bool dont_round_edges = false;
+    offset(expoly, coord_t(padding / SCALING_FACTOR), dont_round_edges);
+
+    // Ok, we need the edge-cache...
+    // go around the polygon and add additional vertices. Four points for
+    // each breakstick. Care must be taken for the right orientation of the
+    // added points.
+
+    // We included libnest2d clipper backend so PolygonImpl is compatible with
+    // clipper Path
+    PolygonImpl poly;
+    poly.Contour = Slic3rMultiPoint_to_ClipperPath(expoly.contour);
+    // Holes will be ignored
+    // std::reverse(poly.Contour.begin(), poly.Contour.end());
+    // poly.Holes = Slic3rMultiPoints_to_ClipperPaths(expoly.holes);
+    // for(auto& h : poly.Holes) std::reverse(h.begin(), h.end());
+
+    EdgeCache ecache(poly);
+
+    // still in clipper coordinates
+    double circ = ecache.circumference() * SCALING_FACTOR;
+    auto count = unsigned(circ / stride);
+    double q = 1.0 / circ;
+    double dwidth = stick_width * q ;
+    auto swidth   = coord_t(stick_width / SCALING_FACTOR);
+    auto spadding = coord_t(padding / SCALING_FACTOR);
+    bool polygon_is_closed = true;
+
+    ClipperLib::Clipper clipper;
+    clipper.AddPath(poly.Contour, ptSubject, polygon_is_closed);
+
+    for(unsigned i = 0; i < count; ++i) {
+        double loc = i * stride * q;
+
+        PointImpl p1 = ecache.coords(loc - dwidth);
+        PointImpl pq = ecache.coords(loc + dwidth); // just for the normal
+
+        Vec2d p1d(p1.X, p1.Y); p1d *= SCALING_FACTOR;
+        Vec2d pqd(pq.X, pq.Y); pqd *= SCALING_FACTOR;
+        auto d = (pqd - p1d).normalized();          // direction vector
+        Vec2d n(-d(Y), d(X));                       // normal
+
+        // Now we have the two points
+
+        PolygonImpl stick;
+        stick.Contour.emplace_back(p1); // emplace the starting point
+        PointImpl ds(coord_t(d(X)*swidth), coord_t(d(Y)*swidth));
+        PointImpl ns(coord_t(n(X)*spadding), coord_t(n(Y)*spadding));
+
+        auto p2 = p1 + ds;
+        auto p3 = p2 + ns;
+        auto p4 = p1 + ns;
+
+        clipper.AddPath({p1, p2, p3, p4}, ptClip, polygon_is_closed);
+    }
+
+    ClipperLib::Paths sol;
+    clipper.Execute(ctDifference, sol);
+
+//    SVG svg("bridgestick_plate.svg");
+//    svg.draw(sol, 1);
+//    svg.Close();
+    if(!sol.empty()) expoly.contour = ClipperPath_to_Slic3rPolygon(sol.front());
+}
+
 void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
                       const PoolConfig& cfg)
 {
@@ -484,6 +573,7 @@ void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
     const coord_t s_safety_dist = 2*s_eradius + coord_t(0.8*s_thickness);
     // const coord_t wheight    = mm(cfg.min_wall_height_mm);
     coord_t s_wingdist          = mm(wingdist);
+    coord_t s_wingheight        = mm(wingheight);
 
     auto& thrcl = cfg.throw_on_cancel;
 
@@ -585,8 +675,44 @@ void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
         // eleveted by the thickness.
         Polygons top_triangles, bottom_triangles;
 
-        triangulate(top_poly, top_triangles);
-        triangulate(inner_base, bottom_triangles);
+        if(cfg.embed_object) {
+            // cutting the object shape into the pad with small breakable sticks
+
+            auto object_base = concaveh;
+            offset_with_breakstick_holes(object_base, 0.5, 10, 0.3);
+
+            // We can cut a hole in the pad corresponding to the object shape:
+            inner_base.holes.emplace_back(object_base);
+            inner_base.holes.back().reverse();
+
+            if(wingheight <= 0) {
+                // if no wings then cut the hole in the upper plate as well
+                top_poly.holes.emplace_back(object_base);
+                top_poly.holes.back().reverse();
+            }
+
+            triangulate(top_poly, top_triangles);
+            triangulate(inner_base, bottom_triangles);
+
+            auto lines = object_base.lines();
+
+            // Generate outer walls
+            auto fp = [](const Point& p, Point::coord_type z) {
+                return unscale(x(p), y(p), z);
+            };
+
+            for(auto& l : lines) {
+                auto s = coord_t(pool.points.size());
+
+                pool.points.emplace_back(fp(l.a, -s_thickness - s_wingheight));
+                pool.points.emplace_back(fp(l.b, -s_thickness - s_wingheight));
+                pool.points.emplace_back(fp(l.a, -s_wingheight));
+                pool.points.emplace_back(fp(l.b, -s_wingheight));
+
+                pool.indices.emplace_back(s + 3, s + 1, s);
+                pool.indices.emplace_back(s + 2, s + 3, s);
+            }
+        }
 
         auto top_plate = convert(top_triangles, 0, false);
         auto bottom_plate = convert(bottom_triangles, -mm(fullheight), true);
