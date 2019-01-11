@@ -547,7 +547,9 @@ void offset_with_breakstick_holes(ExPolygon& expoly,
     if(!sol.empty()) expoly.contour = ClipperPath_to_Slic3rPolygon(sol.front());
 }
 
-void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
+void create_base_pool(const ExPolygons &ground_layer,
+                      const Polygon &object_self_pad,
+                      TriangleMesh& out,
                       const PoolConfig& cfg)
 {
 
@@ -675,10 +677,11 @@ void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
         // eleveted by the thickness.
         Polygons top_triangles, bottom_triangles;
 
-        if(cfg.embed_object) {
+        if(!object_self_pad.empty()) {
             // cutting the object shape into the pad with small breakable sticks
 
-            auto object_base = concaveh;
+            ExPolygon object_base;
+            object_base.contour = object_self_pad;
             offset_with_breakstick_holes(object_base, 0.5, 10, 0.3);
 
             // We can cut a hole in the pad corresponding to the object shape:
@@ -729,6 +732,13 @@ void create_base_pool(const ExPolygons &ground_layer, TriangleMesh& out,
 
         out.merge(mesh(pool));
     }
+}
+
+void create_base_pool(const ExPolygons &base_plate,
+                      TriangleMesh &output_mesh,
+                      const PoolConfig & cfg)
+{
+    create_base_pool(base_plate, {}, output_mesh, cfg);
 }
 
 }

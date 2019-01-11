@@ -637,8 +637,7 @@ void SLAPrint::process()
             auto thrfn = [this](){ throw_if_canceled(); };
 
             if(elevation < pad_h)
-                sla::base_plate(trmesh, bp, float(pad_h), float(lh),
-                                            thrfn);
+                sla::base_plate(trmesh, bp, float(pad_h), float(lh), thrfn);
 
             pcfg.throw_on_cancel = thrfn;
             po.m_supportdata->support_tree_ptr->add_pad(bp, pcfg);

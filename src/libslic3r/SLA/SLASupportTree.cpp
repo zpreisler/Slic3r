@@ -529,7 +529,16 @@ struct Pad {
 
         for(auto& bp : baseplate) basep.emplace_back(bp);
 
-        create_base_pool(basep, tmesh, cfg);
+        Polygon self_pad;
+        if(baseplate.size() == 1) {
+            self_pad = baseplate.front().contour;
+            zlevel += cfg.min_wall_thickness_mm;    // workaround
+            BOOST_LOG_TRIVIAL(info) << "Will use base plate as self pad!";
+        } else {
+            BOOST_LOG_TRIVIAL(info) << "Base plate not usable as self pad!";
+        }
+
+        create_base_pool(basep, self_pad, tmesh, cfg);
         tmesh.translate(0, 0, float(zlevel));
     }
 
@@ -770,8 +779,8 @@ public:
             return meshcache;
         }
 
-        // TODO: Is this necessary?
-        meshcache.repair();
+        // TODO: Is this necessary? Not, according to Vojta...
+        // meshcache.repair();
 
         BoundingBoxf3&& bb = meshcache.bounding_box();
         model_height = bb.max(Z) - bb.min(Z);
@@ -1282,7 +1291,7 @@ bool SLASupportTree::generate(const PointSet &points,
         const double hbr = cfg.head_back_radius_mm;
         const double pradius = cfg.head_back_radius_mm;
         const double maxbridgelen = cfg.max_bridge_length_mm;
-        const double gndlvl = result.ground_level;
+        const double gndlvl = result.ground_level + 1.1;
 
         ClusterEl cl_centroids;
         cl_centroids.reserve(gnd_clusters.size());

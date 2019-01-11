@@ -7,6 +7,7 @@
 namespace Slic3r {
 
 class ExPolygon;
+class Polygon;
 using ExPolygons = std::vector<ExPolygon>;
 
 class TriangleMesh;
@@ -27,7 +28,6 @@ struct PoolConfig {
     double min_wall_height_mm = 5;
     double max_merge_distance_mm = 50;
     double edge_radius_mm = 1;
-    bool   embed_object = true;
 
     ThrowOnCancel throw_on_cancel = [](){};
 
@@ -44,13 +44,18 @@ void create_base_pool(const ExPolygons& base_plate,
                       TriangleMesh& output_mesh,
                       const PoolConfig& = PoolConfig());
 
+void create_base_pool(const ExPolygons& base_plate,
+                      const Polygon& object_self_pad,
+                      TriangleMesh& output_mesh,
+                      const PoolConfig& = PoolConfig());
+
 /// TODO: Currently the base plate of the pool will have half the height of the
 /// whole pool. So the carved out space has also half the height. This is not
 /// a particularly elegant solution, the thickness should be exactly
 /// min_wall_thickness and it should be corrected in the future. This method
 /// will return the correct value for further processing.
 inline double get_pad_elevation(const PoolConfig& cfg) {
-    return 0;//cfg.min_wall_thickness_mm;
+    return cfg.min_wall_thickness_mm;
 }
 
 inline double get_pad_fullheight(const PoolConfig& cfg) {
