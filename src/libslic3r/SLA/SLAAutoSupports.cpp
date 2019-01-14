@@ -37,7 +37,7 @@ SLAAutoSupports::SLAAutoSupports(const TriangleMesh& mesh, const sla::EigenMesh3
 
     // We are done with the islands. Let's sprinkle the rest of the mesh.
     // The function appends to m_output.
-    sprinkle_mesh(mesh);
+    //sprinkle_mesh(mesh);
 }
 
 
@@ -213,15 +213,7 @@ std::vector<std::pair<ExPolygon, coord_t>> SLAAutoSupports::find_islands(const s
         const ExPolygons& expolys_top = slices[i];
         const ExPolygons& expolys_bottom = (i == 0 ? ExPolygons() : slices[i-1]);
 
-        std::string layer_num_str = std::string((i<10 ? "0" : "")) + std::string((i<100 ? "0" : "")) + std::to_string(i);
-#ifdef SLA_AUTOSUPPORTS_DEBUG
-        output_expolygons(expolys_top, "top" + layer_num_str + ".svg");
-#endif /* SLA_AUTOSUPPORTS_DEBUG */
-        ExPolygons diff = diff_ex(expolys_top, expolys_bottom);
-
-#ifdef SLA_AUTOSUPPORTS_DEBUG
-        output_expolygons(diff, "diff" + layer_num_str + ".svg");
-#endif /* SLA_AUTOSUPPORTS_DEBUG */
+       ExPolygons diff = diff_ex(expolys_top, expolys_bottom);
 
         ClosestPointLookupType cpl(SCALED_EPSILON);
         for (const ExPolygon& expol : expolys_top) {
@@ -233,22 +225,28 @@ std::vector<std::pair<ExPolygon, coord_t>> SLAAutoSupports::find_islands(const s
             // the lookup structure now contains all points from the top slice
         }
 
-        for (const ExPolygon& polygon : diff) {
+        for (const ExPolygon& polygon : diff/*expolys_top*/) {
             // we want to check all boundary points of the diff polygon
             bool island = true;
             for (const Point& p : polygon.contour.points) {
-                if (cpl.find(p).second != 0) { // the point belongs to the bottom slice - this cannot be an island
+                if (cpl.find(p).second != 0 ) { // the point belongs to the bottom slice - this cannot be an island
                     island = false;
                     goto NO_ISLAND;
                 }
             }
             for (const Polygon& hole : polygon.holes)
                 for (const Point& p : hole.points)
-                if (cpl.find(p).second != 0) {
+                if (cpl.find(p).second !=0 ) {
                     island = false;
                     goto NO_ISLAND;
                 }
-
+/*
+            for (const ExPolygon& p : expolys_bottom)
+                if (p.overlaps(polygon) || polygon.overlaps(p)) {
+                    island = false;
+                    break;
+                }
+*/
             if (island) { // all points of the diff polygon are from the top slice
                 islands.push_back(std::make_pair(polygon, scale_(i!=0 ? heights[i-1] : heights[0]-(heights[1]-heights[0]))));
             }
@@ -256,12 +254,15 @@ std::vector<std::pair<ExPolygon, coord_t>> SLAAutoSupports::find_islands(const s
         }
 
 #ifdef SLA_AUTOSUPPORTS_DEBUG
-        //if (!islands.empty())
-          //  output_expolygons(islands, "islands" + layer_num_str + ".svg");
+        /*std::string layer_num_str = std::string((i<10 ? "0" : "")) + std::string((i<100 ? "0" : "")) + std::to_string(i);
+        output_expolygons(expolys_top, "top" + layer_num_str + ".svg");
+        output_expolygons(diff, "diff" + layer_num_str + ".svg");
+        if (!islands.empty())
+            output_expolygons(islands, "islands" + layer_num_str + ".svg");*/
 #endif /* SLA_AUTOSUPPORTS_DEBUG */
+
         m_throw_on_cancel();
     }
-
     return islands;
 }
 
@@ -276,10 +277,11 @@ std::vector<Vec3d> SLAAutoSupports::uniformly_cover(const std::pair<ExPolygon, c
         for (const auto& hole : island.first.holes)
             if (hole.contains(out))
                 goto HOLE_HIT;
+        std::cout << island.second/1000000. << "\t" << out(0)/1000000. << "\t" << out(1)/1000000. << std::endl;
         return std::vector<Vec3d>{unscale(out(0), out(1), island.second)};
     }
-
 HOLE_HIT:
+return std::vector<Vec3d>();
     // In this case either the centroid lies in a hole, or there are multiple points
     // to place. We will cover the island another way.
     // For now we'll just place the points randomly not too close to the others.
@@ -331,5 +333,159 @@ void SLAAutoSupports::project_upward_onto_mesh(std::vector<Vec3d>& points) const
     }
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+
+SLAAutoSupports2::SLAAutoSupports2(const TriangleMesh& mesh, const sla::EigenMesh3D& emesh, const std::vector<ExPolygons>& slices, const std::vector<float>& heights,
+                                   const Config& config, std::function<void(void)> throw_on_cancel)
+: m_config(config), m_V(emesh.V), m_F(emesh.F), m_throw_on_cancel(throw_on_cancel)
+{
+    // Find all separate islands that will need support. The coord_t number denotes height
+    // of a point just below the mesh (so that we can later project the point precisely
+    // on the mesh by raycasting (done by igl) and not risking we will place the point inside).
+    /*std::vector<std::pair<ExPolygon, coord_t>> islands = */
+    find_islands(slices, heights);
+
+    // Uniformly cover each of the islands with support points.
+    /*for (const auto& island : islands) {
+        std::vector<Vec3d> points = uniformly_cover(island);
+        m_throw_on_cancel();
+        project_upward_onto_mesh(points);
+        m_output.insert(m_output.end(), points.begin(), points.end());
+        m_throw_on_cancel();
+    }*/
+}
+
+
+
+
+std::vector<std::pair<ExPolygon, coord_t>> SLAAutoSupports2::find_islands(const std::vector<ExPolygons>& slices, const std::vector<float>& heights)
+{
+    std::vector<std::pair<ExPolygon, coord_t>> islands;
+
+    for (unsigned int i = 0; i<slices.size(); ++i) {
+        const ExPolygons& expolys_top = slices[i];
+        //const ExPolygons& expolys_bottom = (i == 0 ? ExPolygons() : slices[i-1]);
+        // this stores the height of the BOTTOM layer (that's where we will later place the point to make sure it's below the mesh)
+        coord_t height = scale_(i!=0 ? heights[i-1] : heights[0]-(heights[1]-heights[0]));
+
+        for (const ExPolygon& polygon : expolys_top) {
+            std::vector<unsigned int> indices;
+
+            for (unsigned int structure_idx=0; structure_idx<m_structures.size(); ++structure_idx) {
+                const ExPolygons& bottom = m_structures[structure_idx].top_slice;
+                for (const ExPolygon& expoly : bottom)
+                    if (polygon.overlaps(expoly) || expoly.overlaps(polygon)) {
+                        indices.push_back(structure_idx);
+                        break;
+                    }
+            }
+
+            if (indices.empty()) {
+                m_structures.emplace_back(polygon, height);
+                Point out = polygon.contour.centroid();
+                m_output.emplace_back(unscale(out(0), out(1), height));
+            }
+            else
+                polygon_to_structures(polygon, height, indices);
+        }
+
+        delete_finished_structures(height);
+        output_structures();
+
+        // Now we can go through all existing structures and add some support points if needed
+        // ...
+
+        m_throw_on_cancel();
+
+#ifdef SLA_AUTOSUPPORTS_DEBUG
+        /*std::string layer_num_str = std::string((i<10 ? "0" : "")) + std::string((i<100 ? "0" : "")) + std::to_string(i);
+        output_expolygons(expolys_top, "top" + layer_num_str + ".svg");
+        output_expolygons(diff, "diff" + layer_num_str + ".svg");
+        if (!islands.empty())
+            output_expolygons(islands, "islands" + layer_num_str + ".svg");*/
+#endif /* SLA_AUTOSUPPORTS_DEBUG */
+    }
+
+    return islands;
+}
+
+
+void SLAAutoSupports2::polygon_to_structures(const ExPolygon& polygon, coord_t height, std::vector<unsigned int>& indices)
+{
+    if (indices.empty()) {// just for debugging:
+        std::cout << "PRAZDNY VECTOR INDICES - NECO JE MOZNA SPATNE !!!" << std::endl;
+        return;
+    }
+
+    // we will push the new slice to the first overlapping structure and discard the rest,
+    // not forgetting to update the force(sum) and force point (weighted average)
+    Structure& fs = m_structures[indices.front()];
+    fs.height = height;
+    fs.new_slice.clear();
+    fs.new_slice.push_back(polygon);
+
+    for (unsigned int i=1; i<indices.size(); ++i) {
+        Structure& s = m_structures[indices[i]];
+
+        fs.new_slice = union_ex(s.top_slice);
+
+        fs.supports_force_point *= fs.supports_force;
+        s.supports_force_point *= s.supports_force;
+
+        fs.supports_force_point += s.supports_force_point;
+        fs.supports_force += s.supports_force;
+        fs.supports_force_point *= 1./fs.supports_force;
+        m_structures.erase(m_structures.begin() + indices[i]);
+
+        // we removed an element: all following elements have moved one position to the left
+        for (unsigned int j=i+1; j<indices.size(); ++j)
+            --indices[j];
+    }
+}
+
+// deletes all structures that do not reach this height
+void SLAAutoSupports2::delete_finished_structures(coord_t height)
+{
+    for (unsigned int i=0; i<m_structures.size(); ++i)
+        if (m_structures[i].height < height)
+            m_structures.erase(m_structures.begin() + (i--));
+
+    for (Structure& s : m_structures)
+        s.top_slice = s.new_slice;
+}
+
+
+#ifdef SLA_AUTOSUPPORTS_DEBUG
+void SLAAutoSupports2::output_structures() const
+{
+    for (unsigned int i=0 ; i<m_structures.size(); ++i) {
+        std::stringstream ss;
+        ss << m_structures[i].unique_id.count() << "_" << std::setw(10) << std::setfill('0') << 1000 + (int)m_structures[i].height/1000 << ".png";
+        output_expolygons(m_structures[i].top_slice, ss.str());
+    }
+}
+
+void SLAAutoSupports2::output_expolygons(const ExPolygons& expolys, std::string filename) const
+{
+    BoundingBox bb(Point(-30000000, -30000000), Point(30000000, 30000000));
+    Slic3r::SVG svg_cummulative(filename, bb);
+    for (size_t i = 0; i < expolys.size(); ++ i) {
+        /*Slic3r::SVG svg("single"+std::to_string(i)+".svg", bb);
+        svg.draw(expolys[i]);
+        svg.draw_outline(expolys[i].contour, "black", scale_(0.05));
+        svg.draw_outline(expolys[i].holes, "blue", scale_(0.05));
+        svg.Close();*/
+
+        svg_cummulative.draw(expolys[i]);
+        svg_cummulative.draw_outline(expolys[i].contour, "black", scale_(0.05));
+        svg_cummulative.draw_outline(expolys[i].holes, "blue", scale_(0.05));
+    }
+}
+#endif
 
 } // namespace Slic3r

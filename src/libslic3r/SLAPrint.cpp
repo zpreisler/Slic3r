@@ -526,7 +526,7 @@ void SLAPrint::process()
                                       ilh, float(lh));
 
             this->throw_if_canceled();
-            SLAAutoSupports::Config config;
+            SLAAutoSupports2::Config config;
             const SLAPrintObjectConfig& cfg = po.config();
             config.minimal_z = float(cfg.support_minimal_z);
             config.density_at_45 = cfg.support_density_at_45 / 10000.f;
@@ -534,7 +534,7 @@ void SLAPrint::process()
 
             // Construction of this object does the calculation.
             this->throw_if_canceled();
-            SLAAutoSupports auto_supports(po.transformed_mesh(),
+            SLAAutoSupports2 auto_supports(po.transformed_mesh(),
                                           po.m_supportdata->emesh,
                                           po.get_model_slices(),
                                           heights,
