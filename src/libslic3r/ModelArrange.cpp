@@ -764,13 +764,15 @@ bool arrange(Model &model,              // The model with the geometries
 
     auto& cfn = stopcondition;
 
+    coord_t binpadding = coord_t(0.01/SCALING_FACTOR);
+    coord_t md = coord_t(std::ceil(min_obj_distance / 2.0)) - binpadding;
     auto binbb = Box({
-                         static_cast<libnest2d::Coord>(bbb.min(0)),
-                         static_cast<libnest2d::Coord>(bbb.min(1))
+                         static_cast<libnest2d::Coord>(bbb.min(0) - md),
+                         static_cast<libnest2d::Coord>(bbb.min(1) - md)
                      },
-    {
-                         static_cast<libnest2d::Coord>(bbb.max(0)),
-                         static_cast<libnest2d::Coord>(bbb.max(1))
+                     {
+                         static_cast<libnest2d::Coord>(bbb.max(0) + md),
+                         static_cast<libnest2d::Coord>(bbb.max(1) + md)
                      });
 
     switch(bedhint.type) {
