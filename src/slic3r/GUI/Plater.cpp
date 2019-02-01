@@ -1325,11 +1325,12 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     auto *new_model = (!load_model || one_by_one) ? nullptr : new Slic3r::Model();
     std::vector<size_t> obj_idxs;
 
+    std::vector<Slic3r::Model> localmodels(input_files.size());
     for (size_t i = 0; i < input_files.size(); i++) {
         const auto &path = input_files[i];
         const auto filename = path.filename();
-        const auto dlg_info = wxString::Format(_(L("Processing input file %s\n")), from_path(filename));
-        dlg.Update(100 * i / input_files.size(), dlg_info);
+        const auto dlg_info = wxString::Format(_(L("Preprocessing input file %s\n")), from_path(filename));
+        dlg.Update(50 * i / input_files.size(), dlg_info);
 
         const bool type_3mf = std::regex_match(path.string(), pattern_3mf);
         const bool type_zip_amf = !type_3mf && std::regex_match(path.string(), pattern_zip_amf);
@@ -1338,13 +1339,13 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         const bool type_prusa = std::regex_match(path.string(), pattern_prusa);
 #endif // ENABLE_VOLUMES_CENTERING_FIXES
 
-        Slic3r::Model model;
+        Slic3r::Model& localmodel = localmodels[i];
         try {
             if (type_3mf || type_zip_amf) {
                 DynamicPrintConfig config;
                 {
                     DynamicPrintConfig config_loaded;
-                    model = Slic3r::Model::read_from_archive(path.string(), &config_loaded, false);
+                    localmodel = Slic3r::Model::read_from_archive(path.string(), &config_loaded, false);
                     if (load_config && !config_loaded.empty()) {
                         // Based on the printer technology field found in the loaded config, select the base for the config,
 					    PrinterTechnology printer_technology = Preset::printer_technology(config_loaded);
@@ -1367,8 +1368,8 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                 }
             }
             else {
-                model = Slic3r::Model::read_from_file(path.string(), nullptr, false);
-                for (auto obj : model.objects)
+                localmodel = Slic3r::Model::read_from_file(path.string(), nullptr, false);
+                for (auto obj : localmodel.objects)
                     if (obj->name.empty())
                         obj->name = fs::path(obj->input_file).filename().string();
             }
@@ -1376,6 +1377,36 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
             GUI::show_error(q, e.what());
             continue;
         }
+    }
+
+//    ModelInstancePtrs newinstances;
+
+//    for(auto& oid : obj_idxs) {
+//        ModelObject * mo = model.objects.at(oid);
+//        for(auto instptr : mo->instances) newinstances.emplace_back(instptr);
+//    }
+
+//    auto min_obj_distance = static_cast<coord_t>(6/SCALING_FACTOR);
+//    const auto *bed_shape_opt = config->opt<ConfigOptionPoints>("bed_shape");
+//    assert(bed_shape_opt);
+//    auto& bedpoints = bed_shape_opt->values;
+//    Polyline bed; bed.points.reserve(bedpoints.size());
+//    for(auto& v : bedpoints) bed.append(Point::new_scale(v(0), v(1)));
+//    arr::find_new_position(model, newinstances, min_obj_distance, bed);
+
+
+    for(size_t i = 0; i < input_files.size(); ++i) {
+        Slic3r::Model& localmodel = localmodels[i];
+        const auto &path = input_files[i];
+        const auto filename = path.filename();
+        const bool type_3mf = std::regex_match(path.string(), pattern_3mf);
+//        const bool type_zip_amf = !type_3mf && std::regex_match(path.string(), pattern_zip_amf);
+        const bool type_any_amf = !type_3mf && std::regex_match(path.string(), pattern_any_amf);
+#if ENABLE_VOLUMES_CENTERING_FIXES
+        const bool type_prusa = std::regex_match(path.string(), pattern_prusa);
+#endif // ENABLE_VOLUMES_CENTERING_FIXES
+        const auto dlg_info = wxString::Format(_(L("Importing input file %s\n")), from_path(filename));
+        dlg.Update(50 + 50 * i / input_files.size(), dlg_info);
 
         if (load_model)
         {
@@ -1384,14 +1415,14 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 #if ENABLE_VOLUMES_CENTERING_FIXES
             if (!type_3mf && !type_any_amf && !type_prusa) {
 #endif // ENABLE_VOLUMES_CENTERING_FIXES
-                if (model.looks_like_multipart_object()) {
+                if (localmodel.looks_like_multipart_object()) {
                     wxMessageDialog dlg(q, _(L(
                         "This file contains several objects positioned at multiple heights. "
                         "Instead of considering them as multiple objects, should I consider\n"
                         "this file as a single object having multiple parts?\n"
                         )), _(L("Multi-part object detected")), wxICON_WARNING | wxYES | wxNO);
                     if (dlg.ShowModal() == wxID_YES) {
-                        model.convert_multipart_object(nozzle_dmrs->values.size());
+                        localmodel.convert_multipart_object(nozzle_dmrs->values.size());
                     }
                 }
 #if ENABLE_VOLUMES_CENTERING_FIXES
@@ -1401,7 +1432,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 #if !ENABLE_VOLUMES_CENTERING_FIXES
             if (type_3mf || type_any_amf) {
 #endif // !ENABLE_VOLUMES_CENTERING_FIXES
-                for (ModelObject* model_object : model.objects) {
+                for (ModelObject* model_object : localmodel.objects) {
                     model_object->center_around_origin();
                     model_object->ensure_on_bed();
                 }
@@ -1412,21 +1443,21 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
             // check multi-part object adding for the SLA-printing
             if (printer_technology == ptSLA)
             {
-                for (auto obj : model.objects)
+                for (auto obj : localmodel.objects)
                     if ( obj->volumes.size()>1 ) {
-                        Slic3r::GUI::show_error(nullptr, 
-                            wxString::Format(_(L("You can't to add the object(s) from %s because of one or some of them is(are) multi-part")), 
+                        Slic3r::GUI::show_error(nullptr,
+                            wxString::Format(_(L("You can't to add the object(s) from %s because of one or some of them is(are) multi-part")),
                                              from_path(filename)));
                         return std::vector<size_t>();
                     }
             }
 
             if (one_by_one) {
-                auto loaded_idxs = load_model_objects(model.objects);
+                auto loaded_idxs = load_model_objects(localmodel.objects);
                 obj_idxs.insert(obj_idxs.end(), loaded_idxs.begin(), loaded_idxs.end());
             } else {
                 // This must be an .stl or .obj file, which may contain a maximum of one volume.
-                for (const ModelObject* model_object : model.objects) {
+                for (const ModelObject* model_object : localmodel.objects) {
                     new_model->add_object(*model_object);
                 }
             }
@@ -1449,6 +1480,26 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
     if (load_model)
     {
+//        ModelInstancePtrs newinstances;
+
+//        for(auto& oid : obj_idxs) {
+//            ModelObject * mo = model.objects.at(oid);
+//            for(auto instptr : mo->instances) newinstances.emplace_back(instptr);
+//        }
+
+//        auto min_obj_distance = static_cast<coord_t>(6/SCALING_FACTOR);
+
+//        const auto *bed_shape_opt = config->opt<ConfigOptionPoints>("bed_shape");
+//        assert(bed_shape_opt);
+//        auto& bedpoints = bed_shape_opt->values;
+//        Polyline bed; bed.points.reserve(bedpoints.size());
+//        for(auto& v : bedpoints) bed.append(Point::new_scale(v(0), v(1)));
+
+//        arr::find_new_position(model, newinstances, min_obj_distance, bed);
+//        update();
+//        object_list_changed();
+//        this->schedule_background_process();
+
         wxGetApp().app_config->update_skein_dir(input_files[input_files.size() - 1].parent_path().string());
         // XXX: Plater.pm had @loaded_files, but didn't seem to fill them with the filenames...
         statusbar()->set_status_text(_(L("Loaded")));
@@ -1468,40 +1519,25 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     return obj_idxs;
 }
 
-// #define AUTOPLACEMENT_ON_LOAD
-
 std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs &model_objects)
 {
     const BoundingBoxf bed_shape = bed_shape_bb();
     const Vec3d bed_size = Slic3r::to_3d(bed_shape.size().cast<double>(), 1.0) - 2.0 * Vec3d::Ones();
 
-#ifndef AUTOPLACEMENT_ON_LOAD
-    bool need_arrange = false;
-#endif /* AUTOPLACEMENT_ON_LOAD */
     bool scaled_down = false;
     std::vector<size_t> obj_idxs;
     unsigned int obj_count = model.objects.size();
 
-#ifdef AUTOPLACEMENT_ON_LOAD
-    ModelInstancePtrs new_instances;
-#endif /* AUTOPLACEMENT_ON_LOAD */
     for (ModelObject *model_object : model_objects) {
         auto *object = model.add_object(*model_object);
         std::string object_name = object->name.empty() ? fs::path(object->input_file).filename().string() : object->name;
         obj_idxs.push_back(obj_count++);
 
-        if (model_object->instances.empty()) {
-#ifdef AUTOPLACEMENT_ON_LOAD
+        if (model_object->instances.empty()) {          
             object->center_around_origin();
-            new_instances.emplace_back(object->add_instance());
-#else /* AUTOPLACEMENT_ON_LOAD */
-            // if object has no defined position(s) we need to rearrange everything after loading               object->center_around_origin();
-            need_arrange = true;                
-             // add a default instance and center object around origin  
-            object->center_around_origin();  // also aligns object to Z = 0 
-            ModelInstance* instance = object->add_instance();   
+            // add a default instance and center object around origin
+            ModelInstance* instance = object->add_instance();
             instance->set_offset(Slic3r::to_3d(bed_shape.center().cast<double>(), -object->origin_translation(2)));
-#endif /* AUTOPLACEMENT_ON_LOAD */
         }
 
         const Vec3d size = object->bounding_box().size();
@@ -1529,18 +1565,6 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs &mode
         // print.add_model_object(object);
     }
 
-#ifdef AUTOPLACEMENT_ON_LOAD
-    // FIXME distance should be a config value /////////////////////////////////
-    auto min_obj_distance = static_cast<coord_t>(6/SCALING_FACTOR);
-    const auto *bed_shape_opt = config->opt<ConfigOptionPoints>("bed_shape");
-    assert(bed_shape_opt);
-    auto& bedpoints = bed_shape_opt->values;
-    Polyline bed; bed.points.reserve(bedpoints.size());
-    for(auto& v : bedpoints) bed.append(Point::new_scale(v(0), v(1)));
-
-    arr::find_new_position(model, new_instances, min_obj_distance, bed);
-#endif /* AUTOPLACEMENT_ON_LOAD */
-
     if (scaled_down) {
         GUI::show_info(q,
             _(L("Your object appears to be too large, so it was automatically scaled down to fit your print bed.")),
@@ -1553,8 +1577,7 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs &mode
 
     update();
     object_list_changed();
-
-    this->schedule_background_process();
+    schedule_background_process();
 
     return obj_idxs;
 }

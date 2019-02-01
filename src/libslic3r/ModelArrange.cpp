@@ -381,6 +381,8 @@ public:
                       std::back_inserter(result));
         return !result.empty();
     }
+
+    inline const PackGroup& lastResult() const { return m_pck.lastResult(); }
 };
 
 // Arranger specialization for a Box shaped bin.
@@ -840,7 +842,8 @@ bool arrange(Model &model,              // The model with the geometries
 void find_new_position(const Model &model,
                        ModelInstancePtrs toadd,
                        coord_t min_obj_distance,
-                       const Polyline &bed)
+                       const Polyline &bed,
+                       std::function<void(ModelInstance*)> updatefn)
 {
     // Get the 2D projected shapes with their 3D model instance pointers
     auto shapemap = arr::projectModelFromTop(model);
@@ -914,11 +917,47 @@ void find_new_position(const Model &model,
         }
     };
 
+    auto progressfn = [&shapes, &shapes_ptr, updatefn](const PackGroup& lastpg)
+    {
+        if(!lastpg.empty()) {
+            const ItemGroup& lastg = lastpg.front();
+            // We will concentrate on the last item if the ItemGroup as
+            // that should be updated.
+
+            if(!lastg.empty()) {
+                const Item& resultitem = lastg.back();
+                // now we have to find the ModelInstance belonging to this
+                // item:
+                for(size_t idx = 0; idx < shapes.size(); ++idx) {
+                    const Item& it1 = shapes[idx];
+                    if(&it1 == &resultitem) {
+                        auto offset = resultitem.translation();
+                        Radians rot = resultitem.rotation();
+
+                        ModelInstance *minst = shapes_ptr[idx];
+                        Vec3d foffset(offset.X*SCALING_FACTOR,
+                                      offset.Y*SCALING_FACTOR,
+                                      minst->get_offset()(Z));
+
+                        // write the transformation data into the model instance
+                        minst->set_rotation(Z, rot);
+                        minst->set_offset(foffset);
+                        updatefn(shapes_ptr[idx]);
+                        break;
+                    }
+                }
+            }
+        }
+    };
+
     switch(bedhint.type) {
     case BedShapeType::BOX: {
 
         // Create the arranger for the box shaped bed
-        AutoArranger<Box> arrange(binbb, min_obj_distance);
+        AutoArranger<Box> arrange(binbb, min_obj_distance,
+                                  [&arrange, progressfn](unsigned){
+            progressfn(arrange.lastResult());
+        });
 
         if(!preshapes.front().empty()) { // If there is something on the plate
             arrange.preload(preshapes);

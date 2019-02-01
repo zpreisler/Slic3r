@@ -78,7 +78,8 @@ bool arrange(Model &model, coord_t min_obj_distance,
 void find_new_position(const Model& model,
                        ModelInstancePtrs instances_to_add,
                        coord_t min_obj_distance,
-                       const Slic3r::Polyline& bed);
+                       const Slic3r::Polyline& bed,
+                       std::function<void(ModelInstance*)> = [](ModelInstance*){});
 
 }   // arr
 }   // Slic3r
