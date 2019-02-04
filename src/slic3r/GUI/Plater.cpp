@@ -1455,7 +1455,11 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
         for(auto& oid : obj_idxs) {
             ModelObject * mo = model.objects.at(oid);
-            for(auto instptr : mo->instances) newinstances.emplace_back(instptr);
+            for(auto instptr : mo->instances) {
+                if(instptr->get_offset()(X) < -1e5 ||
+                   instptr->get_offset()(Y) < -1e5)
+                    newinstances.emplace_back(instptr);
+            }
         }
 
         auto min_obj_distance = static_cast<coord_t>(6/SCALING_FACTOR);
@@ -1470,9 +1474,19 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         arr::find_new_position(model, newinstances, min_obj_distance, bed,
                                [this, &dlg, &i, c, dlg_info] (ModelInstance*)
         {
-//            this->view3D->reload_scene(true);
+            update();
             dlg.Update(int(100 * ++i / c), dlg_info);
         });
+
+        for(ModelInstance *instptr : newinstances) {
+            if(instptr->get_offset(X) < -1e5 || instptr->get_offset(Y) < -1e5) {
+                ModelObject *object = instptr->get_object();
+                instptr->set_offset(
+                    Slic3r::to_3d(bed_shape_bb().center().cast<double>(),
+                                  -object->origin_translation(2)));
+            }
+        }
+
         update();
         object_list_changed();
         schedule_background_process();
@@ -1511,6 +1525,7 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs &mode
         obj_idxs.push_back(obj_count++);
 
         if (model_object->instances.empty()) {
+            object->center_around_origin();
             ModelInstance* instance = object->add_instance();
             // Place it where it can't be seen.
             instance->set_offset({-1e6, -1e6, 0});
@@ -1540,18 +1555,6 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs &mode
         // print.auto_assign_extruders(object);
         // print.add_model_object(object);
     }
-
-#ifdef AUTOPLACEMENT_ON_LOAD
-    // FIXME distance should be a config value /////////////////////////////////
-    auto min_obj_distance = static_cast<coord_t>(6/SCALING_FACTOR);
-    const auto *bed_shape_opt = config->opt<ConfigOptionPoints>("bed_shape");
-    assert(bed_shape_opt);
-    auto& bedpoints = bed_shape_opt->values;
-    Polyline bed; bed.points.reserve(bedpoints.size());
-    for(auto& v : bedpoints) bed.append(Point::new_scale(v(0), v(1)));
-
-    arr::find_new_position(model, new_instances, min_obj_distance, bed);
-#endif /* AUTOPLACEMENT_ON_LOAD */
 
     if (scaled_down) {
         GUI::show_info(q,

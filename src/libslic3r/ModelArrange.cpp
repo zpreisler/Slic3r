@@ -292,6 +292,9 @@ class AutoArranger {};
 // management and spatial index structures for acceleration.
 template<class TBin>
 class _ArrBase {
+public:
+    using UpdateFn = std::function<void(unsigned, const PackGroup&)>;
+    using ProgressFn = std::function<void(unsigned)>;
 protected:
 
     // Useful type shortcuts...
@@ -312,6 +315,14 @@ protected:
     Box m_pilebb;               // The bounding box of the merged pile.
     ItemGroup m_remaining;      // Remaining items (m_items at the beginning)
     ItemGroup m_items;          // The items to be packed
+
+    ProgressFn m_progressfn;    // Basic progress indicator
+
+    // This is a separate member because this functionality was added later
+    // and I did not wanted to break the interface of the class. This is
+    // a progress indicator functor which receives the partial result as
+    // an additional argument. It can be used to update a scene during arrange
+    UpdateFn m_updatefn;        // Advanced progress indicator
 public:
 
     _ArrBase(const TBin& bin, Distance dist,
@@ -350,7 +361,8 @@ public:
             }
         };
 
-        m_pck.progressIndicator(progressind);
+        m_progressfn = progressind;
+        m_pck.progressIndicator(m_progressfn);
         m_pck.stopCondition(stopcond);
     }
 
@@ -359,10 +371,20 @@ public:
         return m_pck.executeIndexed(std::forward<Args>(args)...);
     }
 
-    inline void preload(const PackGroup& pg) {
+    inline void preload(const PackGroup& pg, UpdateFn updatefn = nullptr) {
         m_pconf.alignment = PConfig::Alignment::DONT_ALIGN;
         m_pconf.object_function = nullptr; // drop the special objectfunction
         m_pck.preload(pg);
+
+        if(updatefn) {
+            m_updatefn = updatefn;
+            m_pck.progressIndicator([this](unsigned st) {
+                m_progressfn(st);
+                m_updatefn(st, lastResult());
+            });
+        }
+
+        m_rtree.clear();
 
         // Build the rtree for queries to work
         for(const ItemGroup& grp : pg)
@@ -437,7 +459,7 @@ public:
 
     AutoArranger(const lnCircle& bin, Distance dist,
                  std::function<void(unsigned)> progressind = [](unsigned){},
-                 std::function<bool(void)> stopcond = [](){return false;}):
+                 std::function<bool(void)> stopcond = [](){ return false; }):
         _ArrBase<lnCircle>(bin, dist, progressind, stopcond) {
 
         // As with the box, only the inside check is different.
@@ -882,10 +904,11 @@ void find_new_position(const Model &model,
         }
     }
 
-    auto try_first_to_center = [&shapes, &shapes_ptr, &binbb]
-            (std::function<bool(const Item&)> is_colliding,
-             std::function<void(Item&)> preload)
+    auto try_first_to_center = [&shapes, &shapes_ptr, &binbb, &preshapes]
+            (std::function<bool(const Item&)> is_colliding)
     {
+        bool ret = false;
+
         // Try to put the first item to the center, as the arranger will not
         // do this for us.
         auto shptrit = shapes_ptr.begin();
@@ -897,7 +920,8 @@ void find_new_position(const Model &model,
             auto d = binbb.center() - ibb.center();
             itm.translate(d);
             if(!is_colliding(itm)) {
-                preload(itm);
+                if(preshapes.empty()) preshapes.emplace_back();
+                preshapes.front().emplace_back(itm);
 
                 auto offset = itm.translation();
                 Radians rot = itm.rotation();
@@ -912,12 +936,15 @@ void find_new_position(const Model &model,
 
                 shit = shapes.erase(shit);
                 shptrit = shapes_ptr.erase(shptrit);
-                break;
+
+                ret = true; break;
             }
         }
+        return ret;
     };
 
-    auto progressfn = [&shapes, &shapes_ptr, updatefn](const PackGroup& lastpg)
+    auto progressfn =
+            [&shapes, &shapes_ptr, updatefn](unsigned, const PackGroup& lastpg)
     {
         if(!lastpg.empty()) {
             const ItemGroup& lastg = lastpg.front();
@@ -954,17 +981,13 @@ void find_new_position(const Model &model,
     case BedShapeType::BOX: {
 
         // Create the arranger for the box shaped bed
-        AutoArranger<Box> arrange(binbb, min_obj_distance,
-                                  [&arrange, progressfn](unsigned){
-            progressfn(arrange.lastResult());
-        });
+        AutoArranger<Box> arrange(binbb, min_obj_distance);
 
         if(!preshapes.front().empty()) { // If there is something on the plate
-            arrange.preload(preshapes);
-            try_first_to_center(
-                [&arrange](const Item& itm) {return arrange.is_colliding(itm);},
-                [&arrange](Item& itm) { arrange.preload({{itm}}); }
-            );
+            arrange.preload(preshapes, progressfn);
+            if(try_first_to_center(
+                [&arrange](const Item& itm) {return arrange.is_colliding(itm);}
+            )) arrange.preload(preshapes);
         }
 
         // Arrange and return the items with their respective indices within the
@@ -981,11 +1004,10 @@ void find_new_position(const Model &model,
         AutoArranger<lnCircle> arrange(cc, min_obj_distance);
 
         if(!preshapes.front().empty()) { // If there is something on the plate
-            arrange.preload(preshapes);
-            try_first_to_center(
-                [&arrange](const Item& itm) {return arrange.is_colliding(itm);},
-                [&arrange](Item& itm) { arrange.preload({{itm}}); }
-            );
+            arrange.preload(preshapes, progressfn);
+            if(try_first_to_center(
+                [&arrange](const Item& itm) {return arrange.is_colliding(itm);}
+            )) arrange.preload(preshapes);;
         }
 
         // Arrange and return the items with their respective indices within the
@@ -1003,11 +1025,10 @@ void find_new_position(const Model &model,
         AutoArranger<P> arrange(irrbed, min_obj_distance);
 
         if(!preshapes.front().empty()) { // If there is something on the plate
-            arrange.preload(preshapes);
-            try_first_to_center(
-                [&arrange](const Item& itm) {return arrange.is_colliding(itm);},
-                [&arrange](Item& itm) { arrange.preload({{itm}}); }
-            );
+            arrange.preload(preshapes, progressfn);
+            if(try_first_to_center(
+                [&arrange](const Item& itm) {return arrange.is_colliding(itm);}
+            )) arrange.preload(preshapes);
         }
 
         // Arrange and return the items with their respective indices within the
