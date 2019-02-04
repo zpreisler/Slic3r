@@ -121,14 +121,13 @@ wxDECLARE_EVENT(EVT_GLCANVAS_VIEWPORT_CHANGED, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_RIGHT_CLICK, Vec2dEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_REMOVE_OBJECT, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_ARRANGE, SimpleEvent);
+wxDECLARE_EVENT(EVT_GLCANVAS_SELECT_ALL, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_QUESTION_MARK, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_INCREASE_INSTANCES, Event<int>); // data: +1 => increase, -1 => decrease
 wxDECLARE_EVENT(EVT_GLCANVAS_INSTANCE_MOVED, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_WIPETOWER_MOVED, Vec3dEvent);
-#if ENABLE_IMPROVED_SIDEBAR_OBJECTS_MANIPULATION
 wxDECLARE_EVENT(EVT_GLCANVAS_INSTANCE_ROTATED, SimpleEvent);
 wxDECLARE_EVENT(EVT_GLCANVAS_INSTANCE_SCALED, SimpleEvent);
-#endif // ENABLE_IMPROVED_SIDEBAR_OBJECTS_MANIPULATION
 wxDECLARE_EVENT(EVT_GLCANVAS_ENABLE_ACTION_BUTTONS, Event<bool>);
 wxDECLARE_EVENT(EVT_GLCANVAS_UPDATE_GEOMETRY, Vec3dsEvent<2>);
 wxDECLARE_EVENT(EVT_GLCANVAS_MOUSE_DRAGGING_FINISHED, SimpleEvent);
@@ -1004,6 +1003,10 @@ public:
 
     void update_volumes_colors_by_extruder();
 
+#if ENABLE_MODE_AWARE_TOOLBAR_ITEMS
+    void update_toolbar_items_visibility();
+#endif // ENABLE_MODE_AWARE_TOOLBAR_ITEMS
+
 #if !ENABLE_IMGUI
     Rect get_gizmo_reset_rect(const GLCanvas3D& canvas, bool viewport) const;
     bool gizmo_reset_rect_contains(const GLCanvas3D& canvas, float x, float y) const;
@@ -1040,7 +1043,6 @@ public:
     void on_timer(wxTimerEvent& evt);
     void on_mouse(wxMouseEvent& evt);
     void on_paint(wxPaintEvent& evt);
-    void on_key_down(wxKeyEvent& evt);
 
     Size get_canvas_size() const;
     Point get_local_mouse_position() const;

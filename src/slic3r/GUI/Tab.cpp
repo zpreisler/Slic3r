@@ -497,13 +497,15 @@ void TabSLAMaterial::init_options_list()
 
 void Tab::get_sys_and_mod_flags(const std::string& opt_key, bool& sys_page, bool& modified_page)
 {
-	auto opt = m_options_list.find(opt_key);
+    auto opt = m_options_list.find(opt_key);
 	if (sys_page) sys_page = (opt->second & osSystemValue) != 0;
 	modified_page |= (opt->second & osInitValue) == 0;
 }
 
 void Tab::update_changed_tree_ui()
 {
+	if (m_options_list.empty())
+        return;
 	auto cur_item = m_treectrl->GetFirstVisibleItem();
     if (!cur_item || !m_treectrl->IsVisible(cur_item))
         return;
@@ -689,9 +691,9 @@ void Tab::update_visibility()
 	Thaw();
 
     // to update tree items color
-    wxTheApp->CallAfter([this]() {
+//    wxTheApp->CallAfter([this]() {
         update_changed_tree_ui();
-    });
+//     });
 }
 
 Field* Tab::get_field(const t_config_option_key& opt_key, int opt_index/* = -1*/) const
@@ -1095,6 +1097,7 @@ void TabPrint::build()
 
 		optgroup = page->new_optgroup(_(L("Output file")));
 		optgroup->append_single_option_line("gcode_comments");
+		optgroup->append_single_option_line("gcode_label_objects");
 		option = optgroup->get_option("output_filename_format");
 		option.opt.full_width = true;
 		optgroup->append_single_option_line(option);
