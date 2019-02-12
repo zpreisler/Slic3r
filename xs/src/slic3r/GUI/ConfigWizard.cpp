@@ -264,7 +264,7 @@ void ConfigWizardPage::append_text(wxString text)
 {
     auto *widget = new wxStaticText(this, wxID_ANY, text, wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT);
     widget->Wrap(WRAP_WIDTH);
-    widget->SetMinSize(wxSize(WRAP_WIDTH, -1));
+    widget->SetMinSize(wxSize(WRAP_WIDTH, MIN_HEIGHT));
     append(widget);
 }
 
