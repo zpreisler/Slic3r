@@ -184,6 +184,12 @@ bool View3D::is_reload_delayed() const
     return (m_canvas != nullptr) ? m_canvas->is_reload_delayed() : false;
 }
 
+void View3D::terminate_current_toolbar_action_running()
+{
+    if (m_canvas != nullptr)
+        m_canvas->terminate_current_toolbar_action_running();
+}
+
 void View3D::reload_scene(bool refresh_immediately, bool force_full_scene_refresh)
 {
     if (m_canvas != nullptr)

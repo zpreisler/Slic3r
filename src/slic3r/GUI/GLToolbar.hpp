@@ -58,9 +58,6 @@ public:
 #if ENABLE_MODE_AWARE_TOOLBAR_ITEMS
         bool visible;
 #endif // ENABLE_MODE_AWARE_TOOLBAR_ITEMS
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-        bool mouse_left_up;
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
 
         Data();
     };
@@ -92,9 +89,6 @@ public:
     void set_visible(bool visible) { m_data.visible = visible; }
 #endif // ENABLE_MODE_AWARE_TOOLBAR_ITEMS
     bool is_separator() const { return m_type == Separator; }
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-    bool requires_mouse_left_up() const { return m_data.mouse_left_up; }
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
 
     void render(unsigned int tex_id, float left, float right, float bottom, float top, unsigned int texture_size, unsigned int border_size, unsigned int icon_size, unsigned int gap_size) const;
 
@@ -246,9 +240,6 @@ public:
     int contains_mouse(const Vec2d& mouse_pos, const GLCanvas3D& parent) const;
 
     void do_action(unsigned int item_id, GLCanvas3D& parent);
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-    bool item_requires_mouse_left_up(unsigned int item_id) const;
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
 
     void render(const GLCanvas3D& parent) const;    
 

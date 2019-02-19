@@ -1005,6 +1005,7 @@ public:
 
     void enable_toolbar_item(const std::string& name, bool enable);
     bool is_toolbar_item_pressed(const std::string& name) const;
+    void terminate_current_toolbar_action_running();
 
     void zoom_to_bed();
     void zoom_to_volumes();

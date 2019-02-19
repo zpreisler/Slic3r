@@ -38,9 +38,6 @@ GLToolbarItem::Data::Data()
 #if ENABLE_MODE_AWARE_TOOLBAR_ITEMS
     , visible(true)
 #endif // ENABLE_MODE_AWARE_TOOLBAR_ITEMS
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-    , mouse_left_up(false)
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
 {
 }
 
@@ -414,13 +411,6 @@ void GLToolbar::do_action(unsigned int item_id, GLCanvas3D& parent)
         }
     }
 }
-
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-bool GLToolbar::item_requires_mouse_left_up(unsigned int item_id) const
-{
-    return (item_id < (unsigned int)m_items.size()) ? m_items[item_id]->requires_mouse_left_up() : false;
-}
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
 
 void GLToolbar::render(const GLCanvas3D& parent) const
 {

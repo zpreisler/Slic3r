@@ -2686,6 +2686,8 @@ void Plater::add_model()
         input_paths.push_back(into_path(file));
     }
     load_files(input_paths, true, false);
+    if (p->view3D != nullptr)
+        p->view3D->terminate_current_toolbar_action_running();
 }
 
 void Plater::extract_config_from_project()

@@ -4426,6 +4426,11 @@ bool GLCanvas3D::is_toolbar_item_pressed(const std::string& name) const
     return m_toolbar.is_item_pressed(name);
 }
 
+void GLCanvas3D::terminate_current_toolbar_action_running()
+{
+    m_toolbar_action_running = false;
+}
+
 void GLCanvas3D::zoom_to_bed()
 {
     _zoom_to_bounding_box(m_bed.get_bounding_box());
@@ -5438,12 +5443,6 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             m_mouse.set_start_position_3D_as_invalid();
             m_toolbar.do_action((unsigned int)toolbar_contains_mouse, *this);
             m_mouse.left_down = false;
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-#ifndef __WXMAC__
-            if (m_toolbar.item_requires_mouse_left_up((unsigned int)toolbar_contains_mouse))
-                wxPostEvent(m_canvas, wxMouseEvent(wxEVT_LEFT_UP));
-#endif // __WXMAC__
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
         }
         else
         {
@@ -6155,9 +6154,6 @@ bool GLCanvas3D::_init_toolbar()
     item.name = "add";
     item.tooltip = GUI::L_str("Add...") + " [" + GUI::shortkey_ctrl_prefix() + "I]";
     item.sprite_id = 0;
-#if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
-    item.mouse_left_up = true;
-#endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
     item.action_event = EVT_GLTOOLBAR_ADD;
     if (!m_toolbar.add_item(item))
         return false;
