@@ -5439,8 +5439,10 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
             m_toolbar.do_action((unsigned int)toolbar_contains_mouse, *this);
             m_mouse.left_down = false;
 #if ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
+#ifndef __WXMAC__
             if (m_toolbar.item_requires_mouse_left_up((unsigned int)toolbar_contains_mouse))
                 wxPostEvent(m_canvas, wxMouseEvent(wxEVT_LEFT_UP));
+#endif // __WXMAC__
 #endif // ENABLE_TOOLBAR_ITEMS_MOUSE_LEFT_UP
         }
         else
