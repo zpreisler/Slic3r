@@ -1476,6 +1476,10 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     // automatic selection of added objects
     if (!obj_idxs.empty() && (view3D != nullptr))
     {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        std::cout << "Automatic selection" << std::endl;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
         GLCanvas3D::Selection& selection = view3D->get_canvas3d()->get_selection();
         selection.clear();
         for (size_t idx : obj_idxs)
@@ -2722,8 +2726,10 @@ void Plater::add_model()
         input_paths.push_back(into_path(file));
     }
     load_files(input_paths, true, false);
-    if (p->view3D != nullptr)
-        p->view3D->terminate_current_toolbar_action_running();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//    if (p->view3D != nullptr)
+//        p->view3D->terminate_current_toolbar_action_running();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
 void Plater::extract_config_from_project()
