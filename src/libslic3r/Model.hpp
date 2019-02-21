@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 #include "Geometry.hpp"
+#include <libslic3r/SLA/SLACommon.hpp>
 
 namespace Slic3r {
 
@@ -47,6 +48,8 @@ struct ModelID
 	bool operator> (const ModelID &rhs) const { return this->id >  rhs.id; }
 	bool operator<=(const ModelID &rhs) const { return this->id <= rhs.id; }
 	bool operator>=(const ModelID &rhs) const { return this->id >= rhs.id; }
+
+    bool valid() const { return id != 0; }
 
 	size_t	id;
 };
@@ -175,7 +178,8 @@ public:
 
     // This vector holds position of selected support points for SLA. The data are
     // saved in mesh coordinates to allow using them for several instances.
-    std::vector<Vec3f>      sla_support_points;
+    // The format is (x, y, z, point_size, supports_island)
+    std::vector<sla::SupportPoint>      sla_support_points;
 
     /* This vector accumulates the total translation applied to the object by the
         center_around_origin() method. Callers might want to apply the same translation
