@@ -4109,6 +4109,7 @@ wxDEFINE_EVENT(EVT_GLCANVAS_WIPETOWER_MOVED, Vec3dEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_ENABLE_ACTION_BUTTONS, Event<bool>);
 wxDEFINE_EVENT(EVT_GLCANVAS_UPDATE_GEOMETRY, Vec3dsEvent<2>);
 wxDEFINE_EVENT(EVT_GLCANVAS_MOUSE_DRAGGING_FINISHED, SimpleEvent);
+wxDEFINE_EVENT(EVT_GLCANVAS_TAB, SimpleEvent);
 
 GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas)
     : m_canvas(canvas)
@@ -4142,6 +4143,7 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas)
     , m_multisample_allowed(false)
     , m_regenerate_volumes(true)
     , m_moving(false)
+    , m_tab_down(false)
     , m_color_by("volume")
     , m_reload_delayed(false)
     , m_render_sla_auxiliaries(true)
@@ -5344,6 +5346,8 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
 
 void GLCanvas3D::on_key(wxKeyEvent& evt)
 {
+    const int keyCode = evt.GetKeyCode();
+
 #if ENABLE_IMGUI
     auto imgui = wxGetApp().imgui();
     if (imgui->update_key_data(evt)) {
@@ -5351,14 +5355,25 @@ void GLCanvas3D::on_key(wxKeyEvent& evt)
     } else
 #endif // ENABLE_IMGUI
     if (evt.GetEventType() == wxEVT_KEY_UP) {
-        const int keyCode = evt.GetKeyCode();
-    
-        // shift has been just released - SLA gizmo might want to close rectangular selection.
-        if (m_gizmos.get_current_type() == Gizmos::SlaSupports && keyCode == WXK_SHIFT && m_gizmos.mouse_event(SLAGizmoEventType::ShiftUp))
+        if (m_tab_down && keyCode == WXK_TAB && !evt.HasAnyModifiers()) {
+            // Enable switching between 3D and Preview with Tab
+            // m_canvas->HandleAsNavigationKey(evt);   // XXX: Doesn't work in some cases / on Linux
+            post_event(SimpleEvent(EVT_GLCANVAS_TAB));
+        } else if (m_gizmos.get_current_type() == Gizmos::SlaSupports && keyCode == WXK_SHIFT && m_gizmos.mouse_event(SLAGizmoEventType::ShiftUp)) {
+            // shift has been just released - SLA gizmo might want to close rectangular selection.
             m_dirty = true;
+        }
+    } else if (evt.GetEventType() == wxEVT_KEY_DOWN) {
+        m_tab_down = keyCode == WXK_TAB && !evt.HasAnyModifiers();
     }
 
-    evt.Skip();   // Needed to have EVT_CHAR generated as well
+    if (keyCode != WXK_TAB
+        && keyCode != WXK_LEFT
+        && keyCode != WXK_UP
+        && keyCode != WXK_RIGHT
+        && keyCode != WXK_DOWN) {
+        evt.Skip();   // Needed to have EVT_CHAR generated as well
+    }
 }
 
 void GLCanvas3D::on_mouse_wheel(wxMouseEvent& evt)
