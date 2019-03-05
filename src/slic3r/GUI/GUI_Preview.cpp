@@ -137,13 +137,11 @@ void View3D::mirror_selection(Axis axis)
         m_canvas->mirror_selection(axis);
 }
 
-#if ENABLE_MODE_AWARE_TOOLBAR_ITEMS
 void View3D::update_toolbar_items_visibility()
 {
     if (m_canvas != nullptr)
         m_canvas->update_toolbar_items_visibility();
 }
-#endif // ENABLE_MODE_AWARE_TOOLBAR_ITEMS
 
 void View3D::enable_toolbar_item(const std::string& name, bool enable)
 {
@@ -191,7 +189,8 @@ void View3D::reload_scene(bool refresh_immediately, bool force_full_scene_refres
 void View3D::render()
 {
     if (m_canvas != nullptr)
-        m_canvas->render();
+        //m_canvas->render();
+        m_canvas->set_as_dirty();
 }
 
 Preview::Preview(wxWindow* parent, DynamicPrintConfig* config, BackgroundSlicingProcess* process, GCodePreviewData* gcode_preview_data, std::function<void()> schedule_background_process_func)
