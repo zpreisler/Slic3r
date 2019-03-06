@@ -3208,7 +3208,7 @@ void GLCanvas3D::Gizmos::do_render_overlay(const GLCanvas3D& canvas, const GLCan
         if (it->second->get_state() == GLGizmoBase::On) {
             float toolbar_top = (float)cnv_h - canvas.m_view_toolbar->get_height();
 #if ENABLE_SVG_ICONS
-            it->second->render_input_window(2.0f * scaled_border + scaled_icons_size * zoom, 0.5f * cnv_h - top_y * zoom, toolbar_top, selection);
+            it->second->render_input_window(2.0f * m_overlay_border + m_overlay_icons_size, 0.5f * cnv_h - top_y * zoom, toolbar_top, selection);
 #else
             it->second->render_input_window(2.0f * m_overlay_border + icon_size * zoom, 0.5f * cnv_h - top_y * zoom, toolbar_top, selection);
 #endif // ENABLE_SVG_ICONS
@@ -5303,7 +5303,9 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
                     if (m_hover_volume_id != -1)
                     {
                         // if right clicking on volume, propagate event through callback (shows context menu)
-                        if (m_volumes.volumes[m_hover_volume_id]->hover && !m_volumes.volumes[m_hover_volume_id]->is_wipe_tower)
+                        if (m_volumes.volumes[m_hover_volume_id]->hover
+                         && !m_volumes.volumes[m_hover_volume_id]->is_wipe_tower // no context menu for the wipe tower
+                         && m_gizmos.get_current_type() != Gizmos::SlaSupports)  // disable context menu when the gizmo is open
                         {
                             // forces the selection of the volume
                             if (!m_selection.is_multiple_full_instance())
