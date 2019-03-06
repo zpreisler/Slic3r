@@ -1714,8 +1714,8 @@ void Plater::priv::selection_changed()
     view3D->enable_toolbar_item("delete", can_delete_object());
     view3D->enable_toolbar_item("more", can_increase_instances());
     view3D->enable_toolbar_item("fewer", can_decrease_instances());
-    view3D->enable_toolbar_item("splitobjects", can_split/*_to_objects*/());
-    view3D->enable_toolbar_item("splitvolumes", can_split/*_to_volumes*/());
+    view3D->enable_toolbar_item("splitobjects", can_split());
+    view3D->enable_toolbar_item("splitvolumes", printer_technology == ptFFF && can_split());
 
     // if the selection is not valid to allow for layer editing, we need to turn off the tool if it is running
     bool enable_layer_editing = layers_height_allowed();
@@ -3144,7 +3144,7 @@ void Plater::send_gcode()
     }
     default_output_file = fs::path(Slic3r::fold_utf8_to_ascii(default_output_file.string()));
 
-    PrintHostSendDialog dlg(default_output_file);
+    PrintHostSendDialog dlg(default_output_file, upload_job.printhost->can_start_print());
     if (dlg.ShowModal() == wxID_OK) {
         upload_job.upload_data.upload_path = dlg.filename();
         upload_job.upload_data.start_print = dlg.start_print();
@@ -3216,9 +3216,6 @@ void Plater::on_config_change(const DynamicPrintConfig &config)
             // update to force bed selection(for texturing)
             bed_shape_changed = true;
             update_scheduled = true;
-        }
-        else if (opt_key == "host_type" && this->p->printer_technology == ptSLA) {
-            p->config->option<ConfigOptionEnum<PrintHostType>>(opt_key)->value = htSL1;
         }
     }
 
