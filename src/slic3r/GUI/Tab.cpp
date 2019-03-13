@@ -751,6 +751,10 @@ void Tab::load_key_value(const std::string& opt_key, const boost::any& value, bo
 
 void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
 {
+	if (wxGetApp().plater() == nullptr) {
+		return;
+	}
+
     const bool is_fff = supports_printer_technology(ptFFF);
     ConfigOptionsGroup* og_freq_chng_params = wxGetApp().sidebar().og_freq_chng_params(is_fff);
     if (opt_key == "fill_density" || opt_key == "pad_enable")
@@ -3273,7 +3277,8 @@ void TabSLAPrint::build()
     optgroup->append_single_option_line("support_pillar_diameter");
     optgroup->append_single_option_line("support_pillar_connection_mode");
     optgroup->append_single_option_line("support_buildplate_only");
-    optgroup->append_single_option_line("support_pillar_widening_factor");
+    // TODO: This parameter is not used at the moment.
+    // optgroup->append_single_option_line("support_pillar_widening_factor");
     optgroup->append_single_option_line("support_base_diameter");
     optgroup->append_single_option_line("support_base_height");
     optgroup->append_single_option_line("support_object_elevation");
@@ -3281,6 +3286,7 @@ void TabSLAPrint::build()
     optgroup = page->new_optgroup(_(L("Connection of the support sticks and junctions")));
     optgroup->append_single_option_line("support_critical_angle");
     optgroup->append_single_option_line("support_max_bridge_length");
+    optgroup->append_single_option_line("support_max_pillar_link_distance");
 
     optgroup = page->new_optgroup(_(L("Automatic generation")));
     optgroup->append_single_option_line("support_points_density_relative");
@@ -3339,11 +3345,37 @@ void TabSLAPrint::update()
         return; // #ys_FIXME
 
 // #ys_FIXME
-//     m_update_cnt++;
-//     ! something to update
-//     m_update_cnt--;
-// 
-//     if (m_update_cnt == 0)
+     m_update_cnt++;
+
+     double head_penetration = m_config->opt_float("support_head_penetration");
+     double head_width = m_config->opt_float("support_head_width");
+     if(head_penetration > head_width) {
+         wxString msg_text = _(L("Head penetration should not be greater than the head width."));
+         auto dialog = new wxMessageDialog(parent(), msg_text, _(L("Invalid Head penetration")), wxICON_WARNING | wxOK);
+         DynamicPrintConfig new_conf = *m_config;
+         if (dialog->ShowModal() == wxID_OK) {
+             new_conf.set_key_value("support_head_penetration", new ConfigOptionFloat(head_width));
+         }
+
+         load_config(new_conf);
+     }
+
+     double pinhead_d = m_config->opt_float("support_head_front_diameter");
+     double pillar_d     = m_config->opt_float("support_pillar_diameter");
+     if(pinhead_d > pillar_d) {
+         wxString msg_text = _(L("Pinhead diameter should be smaller than the pillar diameter."));
+         auto dialog = new wxMessageDialog(parent(), msg_text, _(L("Invalid pinhead diameter")), wxICON_WARNING | wxOK);
+         DynamicPrintConfig new_conf = *m_config;
+         if (dialog->ShowModal() == wxID_OK) {
+             new_conf.set_key_value("support_head_front_diameter", new ConfigOptionFloat(pillar_d / 2.0));
+         }
+
+         load_config(new_conf);
+     }
+
+     m_update_cnt--;
+
+     if (m_update_cnt == 0)
     wxGetApp().mainframe->on_config_changed(m_config);
 }
 
