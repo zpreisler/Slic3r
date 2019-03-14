@@ -427,10 +427,8 @@ void ObjectList::OnContextMenu(wxDataViewEvent&)
     else if (title == _("Name") && pt.x >15 &&
              m_objects_model->GetBitmap(item).GetRefData() == m_bmp_manifold_warning.GetRefData())
     {
-        if (is_windows10()) {
-            const auto obj_idx = m_objects_model->GetIdByItem(m_objects_model->GetTopParent(item));
-            wxGetApp().plater()->fix_through_netfabb(obj_idx);
-        }
+        if (is_windows10())
+            fix_through_netfabb();
     }
 #ifndef __WXMSW__
     GetMainWindow()->SetToolTip(""); // hide tooltip
@@ -1409,12 +1407,14 @@ bool ObjectList::del_subobject_from_object(const int obj_idx, const int idx, con
 		// Cannot delete a wipe tower.
 		return false;
 
+    ModelObject* object = (*m_objects)[obj_idx];
+
     if (type == itVolume) {
-        const auto volume = (*m_objects)[obj_idx]->volumes[idx];
+        const auto volume = object->volumes[idx];
 
         // if user is deleting the last solid part, throw error
         int solid_cnt = 0;
-        for (auto vol : (*m_objects)[obj_idx]->volumes)
+        for (auto vol : object->volumes)
             if (vol->is_model_part())
                 ++solid_cnt;
         if (volume->is_model_part() && solid_cnt == 1) {
@@ -1422,14 +1422,23 @@ bool ObjectList::del_subobject_from_object(const int obj_idx, const int idx, con
             return false;
         }
 
-        (*m_objects)[obj_idx]->delete_volume(idx);
+        object->delete_volume(idx);
+
+        if (object->volumes.size() == 1)
+        {
+            const auto last_volume = object->volumes[0];
+            if (!last_volume->config.empty()) {
+                object->config.apply(last_volume->config);
+                last_volume->config.clear();
+            }
+        }
     }
     else if (type == itInstance) {
-        if ((*m_objects)[obj_idx]->instances.size() == 1) {
+        if (object->instances.size() == 1) {
             Slic3r::GUI::show_error(nullptr, _(L("You can't delete the last intance from object.")));
             return false;
         }
-        (*m_objects)[obj_idx]->delete_instance(idx);
+        object->delete_instance(idx);
     }
     else
         return false;
@@ -1519,12 +1528,7 @@ bool ObjectList::is_splittable()
     if (!get_volume_by_item(item, volume) || !volume)
         return false;
 
-	int splittable = volume->is_splittable();
-	if (splittable == -1) {
-		splittable = (int)volume->mesh.has_multiple_patches();
-		volume->set_splittable(splittable);
-	}
-    return splittable != 0;
+    return volume->is_splittable();
 }
 
 bool ObjectList::selected_instances_of_same_object()
@@ -1759,6 +1763,11 @@ void ObjectList::delete_from_model_and_list(const std::vector<ItemForDelete>& it
             if (item->type&itVolume)
             {
                 m_objects_model->Delete(m_objects_model->GetItemByVolumeId(item->obj_idx, item->sub_obj_idx));
+                if ((*m_objects)[item->obj_idx]->volumes.size() == 1)
+                {
+                    const wxString extruder = wxString::Format("%d", (*m_objects)[item->obj_idx]->config.option<ConfigOptionInt>("extruder")->value);
+                    m_objects_model->SetValue(extruder, m_objects_model->GetItemById(item->obj_idx), 1);
+                }
                 wxGetApp().plater()->canvas3D()->ensure_on_bed(item->obj_idx);
             }
             else
@@ -2277,13 +2286,37 @@ void ObjectList::fix_through_netfabb() const
     if (!item)
         return;
     
-    ItemType type = m_objects_model->GetItemType(item);
+    const ItemType type = m_objects_model->GetItemType(item);
+
+    const int obj_idx = type & itObject ? m_objects_model->GetIdByItem(item) :
+                        type & itVolume ? m_objects_model->GetIdByItem(m_objects_model->GetTopParent(item)) : -1;
+
+    const int vol_idx = type & itVolume ? m_objects_model->GetVolumeIdByItem(item) : -1;
+
+    wxGetApp().plater()->fix_through_netfabb(obj_idx, vol_idx);
     
-    if (type & itObject)
-        wxGetApp().plater()->fix_through_netfabb(m_objects_model->GetIdByItem(item));
-    else if (type & itVolume) 
-        wxGetApp().plater()->fix_through_netfabb(m_objects_model->GetIdByItem(m_objects_model->GetTopParent(item)),
-                                                 m_objects_model->GetVolumeIdByItem(item));    
+    update_item_error_icon(obj_idx, vol_idx);
+}
+
+void ObjectList::update_item_error_icon(const int obj_idx, const int vol_idx) const 
+{
+    const wxDataViewItem item = vol_idx <0 ? m_objects_model->GetItemById(obj_idx) :
+                                m_objects_model->GetItemByVolumeId(obj_idx, vol_idx);
+    if (!item)
+        return;
+
+    auto model_object = (*m_objects)[obj_idx];
+
+    const stl_stats& stats = model_object->volumes[vol_idx<0 ? 0 : vol_idx]->mesh.stl.stats;
+    const int errors = stats.degenerate_facets + stats.edges_fixed + stats.facets_removed +
+                       stats.facets_added + stats.facets_reversed + stats.backwards_edges;
+
+    if (errors == 0) {
+        // delete Error_icon if all errors are fixed
+        wxVariant variant;
+        variant << PrusaDataViewBitmapText(from_u8(model_object->name), wxNullBitmap);
+        m_objects_model->SetValue(variant, item, 0);
+    }
 }
 
 void ObjectList::ItemValueChanged(wxDataViewEvent &event)
