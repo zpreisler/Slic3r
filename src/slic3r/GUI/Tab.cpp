@@ -74,7 +74,7 @@ void Tab::set_type()
 void Tab::create_preset_tab()
 {
 #ifdef __WINDOWS__
-    SetDoubleBuffered(true);
+//     SetDoubleBuffered(true);
 #endif //__WINDOWS__
 
     m_preset_bundle = wxGetApp().preset_bundle;
@@ -816,6 +816,10 @@ void Tab::update_wiping_button_visibility() {
 // to update number of "filament" selection boxes when the number of extruders change.
 void Tab::on_presets_changed()
 {
+	if (wxGetApp().plater() == nullptr) {
+		return;
+	}
+
     // Instead of PostEvent (EVT_TAB_PRESETS_CHANGED) just call update_presets
     wxGetApp().plater()->sidebar().update_presets(m_type);
 	update_preset_description_line();
@@ -1608,25 +1612,21 @@ bool Tab::current_preset_is_dirty()
 
 void TabPrinter::build_printhost(ConfigOptionsGroup *optgroup)
 {
-	const bool sla = m_presets->get_selected_preset().printer_technology() == ptSLA;
+	const PrinterTechnology tech = m_presets->get_selected_preset().printer_technology();
 
 	// Only offer the host type selection for FFF, for SLA it's always the SL1 printer (at the moment)
-	if (! sla) {
+	if (tech == ptFFF) {
 		optgroup->append_single_option_line("host_type");
 	}
 
-	auto printhost_browse = [this, optgroup] (wxWindow* parent) {
-
-		// TODO: SLA Bonjour
-
+	auto printhost_browse = [=](wxWindow* parent) {
 		auto btn = m_printhost_browse_btn = new wxButton(parent, wxID_ANY, _(L(" Browse "))+dots, wxDefaultPosition, wxDefaultSize, wxBU_LEFT);
-// 		btn->SetBitmap(wxBitmap(from_u8(Slic3r::var("zoom.png")), wxBITMAP_TYPE_PNG));
         btn->SetBitmap(create_scaled_bitmap("zoom.png"));
 		auto sizer = new wxBoxSizer(wxHORIZONTAL);
 		sizer->Add(btn);
 
-		btn->Bind(wxEVT_BUTTON, [this, parent, optgroup](wxCommandEvent &e) {
-			BonjourDialog dialog(parent);
+		btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent &e) {
+			BonjourDialog dialog(parent, tech);
 			if (dialog.show_and_lookup()) {
 				optgroup->set_value("print_host", std::move(dialog.get_selected()), true);
 				optgroup->get_field("print_host")->field_changed();
@@ -1639,7 +1639,6 @@ void TabPrinter::build_printhost(ConfigOptionsGroup *optgroup)
 	auto print_host_test = [this](wxWindow* parent) {
 		auto btn = m_print_host_test_btn = new wxButton(parent, wxID_ANY, _(L("Test")), 
 			wxDefaultPosition, wxDefaultSize, wxBU_LEFT | wxBU_EXACTFIT);
-// 		btn->SetBitmap(wxBitmap(from_u8(Slic3r::var("wrench.png")), wxBITMAP_TYPE_PNG));
         btn->SetBitmap(create_scaled_bitmap("wrench.png"));
 		auto sizer = new wxBoxSizer(wxHORIZONTAL);
 		sizer->Add(btn);
@@ -2595,7 +2594,7 @@ void Tab::select_preset(std::string preset_name)
 	} else {
 		if (current_dirty)
 			m_presets->discard_current_changes();
-		m_presets->select_preset_by_name(preset_name, false);
+		const bool is_selected = m_presets->select_preset_by_name(preset_name, false);
 		// Mark the print & filament enabled if they are compatible with the currently selected preset.
 		// The following method should not discard changes of current print or filament presets on change of a printer profile,
 		// if they are compatible with the current printer.
@@ -2604,6 +2603,28 @@ void Tab::select_preset(std::string preset_name)
 		// Initialize the UI from the current preset.
         if (printer_tab)
             static_cast<TabPrinter*>(this)->update_pages();
+
+        if (!is_selected && printer_tab)
+        {
+            /* There is a case, when :
+             * after Config Wizard applying we try to select previously selected preset, but 
+             * in a current configuration this one:
+             *  1. doesn't exist now,
+             *  2. have another printer_technology
+             * So, it is necessary to update list of dependent tabs 
+             * to the corresponding printer_technology
+             */
+            const PrinterTechnology printer_technology = m_presets->get_edited_preset().printer_technology();
+            if (printer_technology == ptFFF && m_dependent_tabs.front() != Preset::Type::TYPE_PRINT ||
+                printer_technology == ptSLA && m_dependent_tabs.front() != Preset::Type::TYPE_SLA_PRINT )
+            {
+                m_dependent_tabs.clear();
+                if (printer_technology == ptFFF)
+                    m_dependent_tabs = { Preset::Type::TYPE_PRINT, Preset::Type::TYPE_FILAMENT };
+                else
+                    m_dependent_tabs = { Preset::Type::TYPE_SLA_PRINT, Preset::Type::TYPE_SLA_MATERIAL };                
+            }
+        }
 		load_current_preset();
 	}
 }

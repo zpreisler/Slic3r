@@ -68,7 +68,7 @@ int CLI::run(int argc, char **argv)
     // load config files supplied via --load
 	for (auto const &file : load_configs) {
         if (! boost::filesystem::exists(file)) {
-            if (m_config.opt_bool("ignore_nonexistent_file")) {
+            if (m_config.opt_bool("ignore_nonexistent_config")) {
                 continue;
             } else {
                 boost::nowide::cerr << "No such file: " << file << std::endl;
@@ -132,9 +132,9 @@ int CLI::run(int argc, char **argv)
 
     // Initialize full print configs for both the FFF and SLA technologies.
     FullPrintConfig    fff_print_config;
-    SLAFullPrintConfig sla_print_config;
+//    SLAFullPrintConfig sla_print_config;
     fff_print_config.apply(m_print_config, true);
-    sla_print_config.apply(m_print_config, true);
+//    sla_print_config.apply(m_print_config, true);
     
     // Loop through transform options.
     for (auto const &opt_key : m_transforms) {
@@ -523,6 +523,8 @@ bool CLI::setup(int argc, char **argv)
     // If any option is unsupported, print usage and abort immediately.
     t_config_option_keys opt_order;
     if (! m_config.read_cli(argc, argv, &m_input_files, &opt_order)) {
+		// Separate error message reported by the CLI parser from the help.
+		boost::nowide::cerr << std::endl;
         this->print_help();
 		return false;
     }
@@ -530,7 +532,7 @@ bool CLI::setup(int argc, char **argv)
 	for (auto const &opt_key : opt_order) {
 		if (cli_actions_config_def.has(opt_key))
 			m_actions.emplace_back(opt_key);
-		if (cli_transform_config_def.has(opt_key))
+		else if (cli_transform_config_def.has(opt_key))
 			m_transforms.emplace_back(opt_key);
 	}
 
@@ -615,7 +617,7 @@ std::string CLI::output_filepath(const Model &model, IO::ExportFormat format) co
     };
     auto proposed_path = boost::filesystem::path(model.propose_export_file_name_and_path(ext));
     // use --output when available
-	std::string cmdline_param = m_config.opt_string("output", false);
+	std::string cmdline_param = m_config.opt_string("output");
     if (! cmdline_param.empty()) {
         // if we were supplied a directory, use it and append our automatically generated filename
         boost::filesystem::path cmdline_path(cmdline_param);
