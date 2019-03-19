@@ -3739,6 +3739,11 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas* canvas, Bed3D& bed, Camera& camera, GLToolbar
     }
 
     m_selection.set_volumes(&m_volumes.volumes);
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_idle_1_last = std::chrono::high_resolution_clock::now();
+    m_idle_2_last = std::chrono::high_resolution_clock::now();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
 GLCanvas3D::~GLCanvas3D()
@@ -4194,6 +4199,24 @@ void GLCanvas3D::render()
     _render_view_toolbar();
     if (m_layers_editing.last_object_id >= 0)
         m_layers_editing.render_overlay(*this);
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    wxGetApp().imgui()->set_next_window_pos(10, 10, ImGuiCond_Always);
+    wxGetApp().imgui()->set_next_window_bg_alpha(0.5f);
+    wxGetApp().imgui()->begin(std::string("Timer"), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::PushItemWidth(100.0f);
+    wxGetApp().imgui()->text("Idle 1: ");
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_idle_1_time).count()));
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(" ms");
+    wxGetApp().imgui()->text("Idle 2: ");
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_idle_2_time).count()));
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(" ms");
+    wxGetApp().imgui()->end();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     wxGetApp().imgui()->render();
 
@@ -4749,8 +4772,19 @@ void GLCanvas3D::on_size(wxSizeEvent& evt)
 
 void GLCanvas3D::on_idle(wxIdleEvent& evt)
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    auto now = std::chrono::high_resolution_clock::now();
+    m_idle_1_time = now - m_idle_1_last;
+    m_idle_1_last = now;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
     if (!m_dirty)
         return;
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_idle_2_time = now - m_idle_2_last;
+    m_idle_2_last = now;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     _refresh_if_shown_on_screen();
 }
