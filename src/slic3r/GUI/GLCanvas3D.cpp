@@ -4147,7 +4147,7 @@ void GLCanvas3D::render()
     wxGetApp().imgui()->new_frame();
 
     // picking pass
-//    _picking_pass();
+    _picking_pass();
 
     // draw scene
     ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
