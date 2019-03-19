@@ -4112,6 +4112,10 @@ void GLCanvas3D::render()
     if (m_canvas == nullptr)
         return;
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    auto render_start_time = std::chrono::high_resolution_clock::now();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 #ifndef __WXMAC__
     // on Mac this check causes flickering when changing view
     if (!_is_shown_on_screen())
@@ -4215,12 +4219,21 @@ void GLCanvas3D::render()
     wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_idle_2_time).count()));
     ImGui::SameLine();
     wxGetApp().imgui()->text(" ms");
+    wxGetApp().imgui()->text("Render: ");
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_render_time).count()));
+    ImGui::SameLine();
+    wxGetApp().imgui()->text(" ms");
     wxGetApp().imgui()->end();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     wxGetApp().imgui()->render();
 
     m_canvas->SwapBuffers();
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_render_time = std::chrono::high_resolution_clock::now() - render_start_time;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
 void GLCanvas3D::select_all()
