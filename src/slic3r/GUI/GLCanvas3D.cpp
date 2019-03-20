@@ -2568,15 +2568,20 @@ void GLCanvas3D::render()
     _render_selection_center();
 #endif // ENABLE_RENDER_SELECTION_CENTER
 
-    // we need to set the mouse's scene position here because the depth buffer
-    // could be invalidated by the following gizmo render methods
-    // this position is used later into on_mouse() to drag the objects
-    m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    scene_position_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
+    if (m_hover_volume_id != -1)
+    {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // we need to set the mouse's scene position here because the depth buffer
+        // could be invalidated by the following gizmo render methods
+        // this position is used later into on_mouse() to drag the objects
+        m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        ::glFinish();
+        now = std::chrono::high_resolution_clock::now();
+        scene_position_pass_time = now - frame_curr_time;
+        frame_curr_time = now;
+    }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     _render_current_gizmo();
