@@ -3548,7 +3548,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         render();
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - Consumed by ImGUI\n") << std::endl;
+        std::cout << (format_mouse_event_debug_message(evt) + " - Consumed by ImGUI") << std::endl;
 //        printf((format_mouse_event_debug_message(evt) + " - Consumed by ImGUI\n").c_str());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
@@ -3563,7 +3563,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         render();
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - OnEnter workaround\n") << std::endl;
+        std::cout << (format_mouse_event_debug_message(evt) + " - OnEnter workaround") << std::endl;
 //        printf((format_mouse_event_debug_message(evt) + " - OnEnter workaround\n").c_str());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
@@ -3573,7 +3573,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
     {
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - other\n") << std::endl;
+        std::cout << (format_mouse_event_debug_message(evt) + " - other (") << (void*)this << ") "<< std::endl;
 //        printf((format_mouse_event_debug_message(evt) + " - other\n").c_str());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
