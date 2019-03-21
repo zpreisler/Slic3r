@@ -3469,24 +3469,39 @@ void Plater::on_config_change(const DynamicPrintConfig &config)
         this->p->schedule_background_process();
 }
 
-void Plater::on_activate()
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+void Plater::on_activate(bool state)
+//void Plater::on_activate()
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 {
 #ifdef __linux__
     wxWindow *focus_window = wxWindow::FindFocus();
     // Activating the main frame, and no window has keyboard focus.
     // Set the keyboard focus to the visible Canvas3D.
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    std::cout << "Plater::on_activate()" << std::endl;
-    if (this->p->view3D->IsShown() && (!focus_window || focus_window != this->p->view3D->get_wxglcanvas()))
+    if (state)
+    {
+        if (this->p->view3D->IsShown() && (!focus_window || focus_window == this->p->preview->get_wxglcanvas()))
 //    if (this->p->view3D->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        this->p->view3D->get_wxglcanvas()->SetFocus();
+            this->p->view3D->get_wxglcanvas()->SetFocus();
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    else if (this->p->preview->IsShown() && (!focus_window || focus_window != this->p->preview->get_wxglcanvas()))
+        else if (this->p->preview->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //    else if (this->p->preview->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        this->p->preview->get_wxglcanvas()->SetFocus();
+            this->p->preview->get_wxglcanvas()->SetFocus();
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        std::cout << "Plater::on_activate() [TRUE] -> " << (void*)focus_window << "|" << (void*)wxWindow::FindFocus() << std::endl;
+        std::cout << "view3d: " << (void*)p->view3D << std::endl;
+        std::cout << "view3d canvas: " << (void*)p->view3D->get_wxglcanvas() << std::endl;
+        std::cout << "preview: " << (void*)p->preview << std::endl;
+        std::cout << "preview canvas: " << (void*)p->preview->get_wxglcanvas() << std::endl;
+    }
+    else
+        std::cout << "Plater::on_activate() [FALSE]" << std::endl;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif
 
     if (! this->p->delayed_error_message.empty()) {
