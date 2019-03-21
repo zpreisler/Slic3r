@@ -3500,7 +3500,12 @@ void Plater::on_activate(bool state)
         std::cout << "preview canvas: " << (void*)p->preview->get_wxglcanvas() << std::endl;
     }
     else
+    {
         std::cout << "Plater::on_activate() [FALSE]" << std::endl;
+        wxWindow* dest = this->p->view3D->IsShown() ? this->p->view3D->get_wxglcanvas() : (this->p->preview->IsShown() ? this->p->view3D->get_wxglcanvas() : nullptr);
+        if (dest != nullptr)
+            wxPostEvent(dest, wxMouseEvent(wxEVT_LEAVE_WINDOW));
+    }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif
 
