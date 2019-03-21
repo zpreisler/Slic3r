@@ -3432,7 +3432,7 @@ void Plater::on_activate()
     // Set the keyboard focus to the visible Canvas3D.
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     std::cout << "Plater::on_activate()" << std::endl;
-    if (this->p->view3D->IsShown() && (!focus_window || focus_window !== this->p->view3D->get_wxglcanvas()))
+    if (this->p->view3D->IsShown() && (!focus_window || focus_window != this->p->view3D->get_wxglcanvas()))
 //    if (this->p->view3D->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         this->p->view3D->get_wxglcanvas()->SetFocus();
