@@ -3573,7 +3573,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
     {
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - other (") << (void*)this << ") "<< std::endl;
+        std::cout << (format_mouse_event_debug_message(evt) + " - other (") << (void*)m_canvas << ") "<< std::endl;
 //        printf((format_mouse_event_debug_message(evt) + " - other\n").c_str());
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */

@@ -3483,10 +3483,20 @@ void Plater::on_activate(bool state)
     {
         if (this->p->view3D->IsShown())
         {
-            if (!focus_window || focus_window == this->p->preview->get_wxglcanvas())
+/*            if (focus_window == nullptr)
+            {
+                wxMouseEvent evt(wxEVT_ENTER_WINDOW);
+                evt.SetEventObject(this->p->view3D->get_wxglcanvas());
+                wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
+            }
+            else */ if (!focus_window || focus_window == this->p->preview->get_wxglcanvas())
                 this->p->view3D->get_wxglcanvas()->SetFocus();
             else if (focus_window == this->p->view3D->get_wxglcanvas())
-                wxPostEvent(focus_window, wxMouseEvent(wxEVT_ENTER_WINDOW));
+            {
+                wxMouseEvent evt(wxEVT_ENTER_WINDOW);
+                evt.SetEventObject(this->p->view3D->get_wxglcanvas());
+                wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
+            }
         }
 //    if (this->p->view3D->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //        this->p->view3D->get_wxglcanvas()->SetFocus();
@@ -3498,7 +3508,11 @@ void Plater::on_activate(bool state)
             if (!focus_window || focus_window == this->p->view3D->get_wxglcanvas())
                 this->p->preview->get_wxglcanvas()->SetFocus();
             else if (focus_window == this->p->preview->get_wxglcanvas())
-                wxPostEvent(focus_window, wxMouseEvent(wxEVT_ENTER_WINDOW));
+            {
+                wxMouseEvent evt(wxEVT_ENTER_WINDOW);
+                evt.SetEventObject(this->p->preview->get_wxglcanvas());
+                wxPostEvent(this->p->preview->get_wxglcanvas(), evt);
+            }
         }
 //    else if (this->p->preview->IsShown() && (!focus_window || focus_window == this->p->view3D->get_wxglcanvas()))
 //            this->p->preview->get_wxglcanvas()->SetFocus();
@@ -3514,9 +3528,18 @@ void Plater::on_activate(bool state)
     else
     {
         std::cout << "Plater::on_activate() [FALSE]" << std::endl;
-        wxWindow* dest = this->p->view3D->IsShown() ? this->p->view3D->get_wxglcanvas() : (this->p->preview->IsShown() ? this->p->preview->get_wxglcanvas() : nullptr);
-        if (dest != nullptr)
-            wxPostEvent(dest, wxMouseEvent(wxEVT_LEAVE_WINDOW));
+        if (this->p->view3D->IsShown())
+        {
+            wxMouseEvent evt(wxEVT_LEAVE_WINDOW);
+            evt.SetEventObject(this->p->view3D->get_wxglcanvas());
+            wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
+        }
+        else if (this->p->preview->IsShown())
+        {
+            wxMouseEvent evt(wxEVT_LEAVE_WINDOW);
+            evt.SetEventObject(this->p->preview->get_wxglcanvas());
+            wxPostEvent(this->p->preview->get_wxglcanvas(), evt);
+        }
     }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif
