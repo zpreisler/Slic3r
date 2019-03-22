@@ -3483,16 +3483,15 @@ void Plater::on_activate(bool state)
     {
         if (this->p->view3D->IsShown())
         {
-/*            if (focus_window == nullptr)
-            {
-                wxMouseEvent evt(wxEVT_ENTER_WINDOW);
-                evt.SetEventObject(this->p->view3D->get_wxglcanvas());
-                wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
-            }
-            else */ if (!focus_window || focus_window == this->p->preview->get_wxglcanvas())
+            if (!focus_window || focus_window == this->p->preview->get_wxglcanvas())
                 this->p->view3D->get_wxglcanvas()->SetFocus();
             else if (focus_window == this->p->view3D->get_wxglcanvas())
             {
+                // When importing a file using the top toolbar add button no mouse leave and enter event is generated on Linux if the user
+                // double clicks on the file name (inside the open file dialog) and then the mouse pointer is outside the progress dialog
+                // when this last hides itself.
+                // This method is called when the focus gets back to the canvas after the loading completes, 
+                // so we force here the missing mouse enter event
                 wxMouseEvent evt(wxEVT_ENTER_WINDOW);
                 evt.SetEventObject(this->p->view3D->get_wxglcanvas());
                 wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
@@ -3509,6 +3508,7 @@ void Plater::on_activate(bool state)
                 this->p->preview->get_wxglcanvas()->SetFocus();
             else if (focus_window == this->p->preview->get_wxglcanvas())
             {
+                // There are actually no known use-cases to trigger this, but this code is place here for simmetry with the view3D case
                 wxMouseEvent evt(wxEVT_ENTER_WINDOW);
                 evt.SetEventObject(this->p->preview->get_wxglcanvas());
                 wxPostEvent(this->p->preview->get_wxglcanvas(), evt);
@@ -3530,6 +3530,7 @@ void Plater::on_activate(bool state)
         std::cout << "Plater::on_activate() [FALSE]" << std::endl;
         if (this->p->view3D->IsShown())
         {
+            // For the same reasons as before, we force a mouse leave event on the canvas
             wxMouseEvent evt(wxEVT_LEAVE_WINDOW);
             evt.SetEventObject(this->p->view3D->get_wxglcanvas());
             wxPostEvent(this->p->view3D->get_wxglcanvas(), evt);
