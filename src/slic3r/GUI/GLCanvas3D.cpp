@@ -1321,14 +1321,14 @@ bool GLCanvas3D::Gizmos::gizmo_event(SLAGizmoEventType action, const Vec2d& mous
 
 GLCanvas3D::ClippingPlane GLCanvas3D::Gizmos::get_sla_clipping_plane() const
 {
-    if (!m_enabled)
-        return ClippingPlane();
+    if (!m_enabled || m_current != SlaSupports)
+        return ClippingPlane::ClipsNothing();
 
     GizmosMap::const_iterator it = m_gizmos.find(SlaSupports);
     if (it != m_gizmos.end())
         return reinterpret_cast<GLGizmoSlaSupports*>(it->second)->get_sla_clipping_plane();
 
-    return ClippingPlane();
+    return ClippingPlane::ClipsNothing();
 }
 
 
@@ -4588,7 +4588,12 @@ void GLCanvas3D::_picking_pass() const
 
         ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        m_camera_clipping_plane = m_gizmos.get_sla_clipping_plane();
+        ::glClipPlane(GL_CLIP_PLANE0, (GLdouble*)m_camera_clipping_plane.get_data());
+        ::glEnable(GL_CLIP_PLANE0);
         _render_volumes(true);
+        ::glDisable(GL_CLIP_PLANE0);
+
         m_gizmos.render_current_gizmo_for_picking_pass(m_selection);
 
         if (m_multisample_allowed)
@@ -4686,25 +4691,6 @@ void GLCanvas3D::set_ortho_projection(float w, float h, float near, float far) c
 }
 
 
-void GLCanvas3D::set_sla_clipping(bool enable) const
-{
-    if (m_gizmos.get_current_type() != Gizmos::SlaSupports)
-        return;
-
-    if (enable) {
-        ClippingPlane gizmo_clipping_plane;
-        try {
-            gizmo_clipping_plane = m_gizmos.get_sla_clipping_plane();
-        }
-        catch (...) { return; }
-
-        ::glClipPlane(GL_CLIP_PLANE0, (GLdouble*)gizmo_clipping_plane.get_data());
-        ::glEnable(GL_CLIP_PLANE0);
-    }
-    else
-        ::glDisable(GL_CLIP_PLANE0);
-}
-
 
 void GLCanvas3D::_render_objects() const
 {
@@ -4714,7 +4700,7 @@ void GLCanvas3D::_render_objects() const
     ::glEnable(GL_LIGHTING);
     ::glEnable(GL_DEPTH_TEST);
 
-    set_sla_clipping(true);
+    m_camera_clipping_plane = m_gizmos.get_sla_clipping_plane();
 
     if (m_use_VBOs)
     {
@@ -4736,6 +4722,8 @@ void GLCanvas3D::_render_objects() const
         else
             m_volumes.set_z_range(-FLT_MAX, FLT_MAX);
 
+        m_volumes.set_clipping_plane(m_camera_clipping_plane.get_data());
+
         m_shader.start_using();
         if (m_picking_enabled && m_layers_editing.is_enabled() && m_layers_editing.last_object_id != -1) {
 			int object_id = m_layers_editing.last_object_id;
@@ -4756,6 +4744,9 @@ void GLCanvas3D::_render_objects() const
     }
     else
     {
+        ::glClipPlane(GL_CLIP_PLANE0, (GLdouble*)m_camera_clipping_plane.get_data());
+        ::glEnable(GL_CLIP_PLANE0);
+
         if (m_use_clipping_planes)
         {
             ::glClipPlane(GL_CLIP_PLANE1, (GLdouble*)m_clipping_planes[0].get_data());
@@ -4763,6 +4754,7 @@ void GLCanvas3D::_render_objects() const
             ::glClipPlane(GL_CLIP_PLANE2, (GLdouble*)m_clipping_planes[1].get_data());
             ::glEnable(GL_CLIP_PLANE2);
         }
+        
 
         // do not cull backfaces to show broken geometry, if any
         m_volumes.render_legacy(GLVolumeCollection::Opaque, m_picking_enabled, [this](const GLVolume& volume) {
@@ -4770,15 +4762,16 @@ void GLCanvas3D::_render_objects() const
             });
         m_volumes.render_legacy(GLVolumeCollection::Transparent, false);
 
+        ::glDisable(GL_CLIP_PLANE0);
+
         if (m_use_clipping_planes)
         {
             ::glDisable(GL_CLIP_PLANE1);
             ::glDisable(GL_CLIP_PLANE2);
         }
     }
-
-    set_sla_clipping(false);
-
+    
+    m_camera_clipping_plane = ClippingPlane::ClipsNothing();
     ::glDisable(GL_LIGHTING);
 }
 
@@ -4821,8 +4814,6 @@ void GLCanvas3D::_render_volumes(bool fake_colors) const
     if (!fake_colors)
         ::glEnable(GL_LIGHTING);
 
-    set_sla_clipping(true);
-
     // do not cull backfaces to show broken geometry, if any
     ::glDisable(GL_CULL_FACE);
 
@@ -4860,8 +4851,6 @@ void GLCanvas3D::_render_volumes(bool fake_colors) const
     ::glDisable(GL_BLEND);
 
     ::glEnable(GL_CULL_FACE);
-
-    set_sla_clipping(false);
 
     if (!fake_colors)
         ::glDisable(GL_LIGHTING);
