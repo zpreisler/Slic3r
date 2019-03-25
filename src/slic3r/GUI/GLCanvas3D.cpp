@@ -52,9 +52,6 @@
 #include <float.h>
 #include <algorithm>
 #include <cmath>
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#include <chrono>
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 static const float TRACKBALLSIZE = 0.8f;
 static const float GROUND_Z = -0.02f;
@@ -2300,8 +2297,8 @@ void GLCanvas3D::toggle_sla_auxiliaries_visibility(bool visible, const ModelObje
 {
     for (GLVolume* vol : m_volumes.volumes) {
         if ((mo == nullptr || m_model->objects[vol->composite_id.object_id] == mo)
-        && (instance_idx == -1 || vol->composite_id.instance_id == instance_idx)
-        && vol->composite_id.volume_id < 0)
+            && (instance_idx == -1 || vol->composite_id.instance_id == instance_idx)
+            && vol->composite_id.volume_id < 0)
             vol->is_active = visible;
     }
 
@@ -2512,25 +2509,6 @@ void GLCanvas3D::render()
     if (m_canvas == nullptr)
         return;
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    auto frame_start_time = std::chrono::high_resolution_clock::now();
-    auto frame_curr_time = frame_start_time;
-    std::chrono::duration<double> picking_pass_time;
-    std::chrono::duration<double> background_pass_time;
-    std::chrono::duration<double> bed_pass_time;
-    std::chrono::duration<double> objects_pass_time;
-    std::chrono::duration<double> sla_slices_pass_time;
-    std::chrono::duration<double> selection_pass_time;
-    std::chrono::duration<double> axes_pass_time;
-    std::chrono::duration<double> scene_position_pass_time;
-    std::chrono::duration<double> gizmo_pass_time;
-    std::chrono::duration<double> selection_sidebar_hints_pass_time;
-    std::chrono::duration<double> gizmos_overlay_pass_time;
-    std::chrono::duration<double> warning_texture_pass_time;
-    std::chrono::duration<double> legend_texture_pass_time;
-    std::chrono::duration<double> toolbars_pass_time;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 #ifndef __WXMAC__
     // on Mac this check causes flickering when changing view
     if (!_is_shown_on_screen())
@@ -2573,111 +2551,35 @@ void GLCanvas3D::render()
     // picking pass
     _picking_pass();
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    auto now = std::chrono::high_resolution_clock::now();
-    picking_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
     // draw scene
     ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _render_background();
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    background_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
     // textured bed needs to be rendered after objects if the texture is transparent
     bool early_bed_render = m_bed.is_custom() || (theta <= 90.0f);
     if (early_bed_render)
-    {
         _render_bed(theta);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        ::glFinish();
-        now = std::chrono::high_resolution_clock::now();
-        bed_pass_time = now - frame_curr_time;
-        frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    }
 
     _render_objects();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    objects_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _render_sla_slices();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    sla_slices_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _render_selection();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    selection_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     _render_axes();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    axes_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     if (!early_bed_render)
-    {
         _render_bed(theta);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        ::glFinish();
-        now = std::chrono::high_resolution_clock::now();
-        bed_pass_time = now - frame_curr_time;
-        frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    }
+
 #if ENABLE_RENDER_SELECTION_CENTER
     _render_selection_center();
 #endif // ENABLE_RENDER_SELECTION_CENTER
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    if (m_hover_volume_id != -1)
-    {
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // we need to set the mouse's scene position here because the depth buffer
-        // could be invalidated by the following gizmo render methods
-        // this position is used later into on_mouse() to drag the objects
-        m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        ::glFinish();
-        now = std::chrono::high_resolution_clock::now();
-        scene_position_pass_time = now - frame_curr_time;
-        frame_curr_time = now;
-    }
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    // we need to set the mouse's scene position here because the depth buffer
+    // could be invalidated by the following gizmo render methods
+    // this position is used later into on_mouse() to drag the objects
+    m_mouse.scene_position = _mouse_to_3d(m_mouse.position.cast<int>());
 
     _render_current_gizmo();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    gizmo_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _render_selection_sidebar_hints();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    selection_sidebar_hints_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 #if ENABLE_SHOW_CAMERA_TARGET
     _render_camera_target();
@@ -2685,131 +2587,15 @@ void GLCanvas3D::render()
 
     // draw overlays
     _render_gizmos_overlay();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    gizmos_overlay_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _render_warning_texture();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    warning_texture_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _render_legend_texture();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    legend_texture_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if !ENABLE_SVG_ICONS
     _resize_toolbars();
 #endif // !ENABLE_SVG_ICONS
     _render_toolbar();
     _render_view_toolbar();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    ::glFinish();
-    now = std::chrono::high_resolution_clock::now();
-    toolbars_pass_time = now - frame_curr_time;
-    frame_curr_time = now;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (m_layers_editing.last_object_id >= 0)
         m_layers_editing.render_overlay(*this);
-
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    wxGetApp().imgui()->set_next_window_pos(10, 10, ImGuiCond_Always);
-    wxGetApp().imgui()->set_next_window_bg_alpha(0.5f);
-    wxGetApp().imgui()->begin(std::string("Timer"), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    ImGui::PushItemWidth(100.0f);
-
-    wxGetApp().imgui()->text("Picking: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(picking_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Background: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(background_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Bed: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(bed_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Objects: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(objects_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Sla slices: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(sla_slices_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Selection: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(selection_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Axes: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(axes_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Scene position: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(scene_position_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Gizmo: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(gizmo_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Sidebar visual hints: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(selection_sidebar_hints_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Gizmos overlay: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(gizmos_overlay_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Warning texture: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(warning_texture_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Legend texture: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(legend_texture_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-
-    wxGetApp().imgui()->text("Toolbars: ");
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(toolbars_pass_time).count()));
-    ImGui::SameLine();
-    wxGetApp().imgui()->text(" ms");
-    wxGetApp().imgui()->end();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     wxGetApp().imgui()->render();
 
@@ -3560,11 +3346,9 @@ void GLCanvas3D::on_timer(wxTimerEvent& evt)
         _perform_layer_editing_action();
 }
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//#ifndef NDEBUG
-#define SLIC3R_DEBUG_MOUSE_EVENTS
-//#endif
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#ifndef NDEBUG
+// #define SLIC3R_DEBUG_MOUSE_EVENTS
+#endif
 
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
 std::string format_mouse_event_debug_message(const wxMouseEvent &evt)
@@ -3625,10 +3409,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         m_mouse.position = evt.Leaving() ? Vec2d(-1.0, -1.0) : pos.cast<double>();
         render();
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - Consumed by ImGUI") << std::endl;
-//        printf((format_mouse_event_debug_message(evt) + " - Consumed by ImGUI\n").c_str());
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                printf((format_mouse_event_debug_message(evt) + " - Consumed by ImGUI\n").c_str());
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
 		return;
     }
@@ -3640,20 +3421,14 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         m_mouse.position = pos.cast<double>();
         render();
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - OnEnter workaround") << std::endl;
-//        printf((format_mouse_event_debug_message(evt) + " - OnEnter workaround\n").c_str());
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                printf((format_mouse_event_debug_message(evt) + " - OnEnter workaround\n").c_str());
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
 		on_enter_workaround = true;
     } else 
 #endif /* __WXMSW__ */
     {
 #ifdef SLIC3R_DEBUG_MOUSE_EVENTS
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        std::cout << (format_mouse_event_debug_message(evt) + " - other (") << (void*)m_canvas << ") "<< std::endl;
-//        printf((format_mouse_event_debug_message(evt) + " - other\n").c_str());
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+             printf((format_mouse_event_debug_message(evt) + " - other\n").c_str());
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
 	}
 
